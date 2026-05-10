@@ -28,6 +28,9 @@
 巅峰单局：最高奖励达到 -0.67，实现了近乎完美的直立平衡控制。
 
 模型权重：models/best_ppo_actor.pth
+训练收敛曲线：
+<img width="1000" height="500" alt="my_ppo_result_20260506211251" src="https://github.com/user-attachments/assets/3163d81f-689c-4128-8892-f23d8df27b91" />
+
 
 训练收敛曲线
 更新日志：本阶段已确立了强健的算法基准（Baseline）。该模型在 1.0kg 标准负载下表现完美，为下一阶段开展跨质量（0.5kg - 2.0kg）泛化性实验奠定了坚实的算法基础。
