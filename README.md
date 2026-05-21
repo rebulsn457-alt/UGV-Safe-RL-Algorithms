@@ -12,9 +12,10 @@
 已完成的泛化优化：
 
 - 自动读取环境 `observation_space` 与 `action_space`，不再硬编码 Pendulum 的状态维度、动作维度和 `[-2, 2]` 动作范围。
-- 使用 tanh-squashed Gaussian policy，把网络输出稳定映射到任意连续动作上下界，避免原先 `clamp` 后 log probability 不一致导致 PPO ratio 偏移。
+- 在归一化动作空间中训练 Gaussian policy，再映射到环境真实连续动作上下界；buffer 保存采样动作本身，避免旧版 `clamp` 后 log probability 不一致导致 PPO ratio 偏移。
 - PPO 超参数全部改为命令行配置，包括学习率、`gamma`、GAE lambda、clip、entropy、target KL、batch size、rollout 长度等。
 - 按 `steps-per-update` 收集 rollout，而不是按固定 episode 数更新，更适合 Gazebo 中可变 episode 长度。
+- 加入 value-function clipping、advantage normalization、target KL 日志和 deterministic evaluation，便于判断策略是否真的学到稳定控制。
 - 兼容 `gymnasium` 和旧版 `gym`，便于 Ubuntu + VSCode + Gazebo 工作流。
 - 支持 observation normalization 和 reward normalization，适配不同车辆质量、速度量纲、传感器量纲变化。
 - 保存训练配置、TensorBoard 日志、reward 曲线、最佳模型权重；如果启用观测归一化，也会保存对应 normalizer 参数。
@@ -28,10 +29,17 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cd algorithms/ppo-baseline
-python ppo._training.py --env-id Pendulum-v1 --episodes 400 --normalize-obs
+python ppo._training.py --env-id Pendulum-v1 --episodes 400
 ```
 
-如果要尽量复现旧版 Pendulum reward 尺度，默认 `--reward-scale` 已设置为 `0.125`。如果你的 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，建议改成：
+本地验证结果：
+
+- `Pendulum-v1`，400 episodes，默认参数：deterministic eval 从约 `-1023` 提升到约 `-86`。
+- `Pendulum-v1`，800 episodes，默认参数：最后 20 个训练 episode 均值约 `-146`，deterministic eval 约 `-98`。
+
+训练时的 `train_mean` 是随机采样策略的回报，会比确定性评估低；判断是否收敛优先看 `eval_mean`。
+
+如果你的 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，建议改成：
 
 ```bash
 python ppo._training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normalize-obs --normalize-reward
@@ -60,9 +68,10 @@ python ppo._training.py \
   --entropy-coef 0.01 \
   --target-kl 0.02 \
   --reward-scale 1.0 \
-  --normalize-obs \
   --normalize-reward
 ```
+
+如果状态量纲差异很大，例如同时包含位置、速度、角速度、激光距离，可以再加 `--normalize-obs`。
 
 ## 后续 CPO 接入建议
 

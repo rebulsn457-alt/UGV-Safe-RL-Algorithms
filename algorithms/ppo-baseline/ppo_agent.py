@@ -12,7 +12,7 @@ def _to_tensor(x, target_device):
  
  
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim=128, log_std_init=-0.5):
+    def __init__(self, state_dim, action_dim, hidden_dim=64, log_std_init=0.0):
         super().__init__()
         self.fc1 = nn.Linear(state_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
@@ -46,7 +46,7 @@ class Actor(nn.Module):
  
  
 class Critic(nn.Module):
-    def __init__(self, state_dim, hidden_dim=128):
+    def __init__(self, state_dim, hidden_dim=64):
         super().__init__()
         self.fc1 = nn.Linear(state_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
@@ -74,9 +74,9 @@ class ReplayMemory:
         self.batch_size = batch_size
         self.clear()
  
-    def add(self, s, raw_a, env_a, r, v, logp, done):
+    def add(self, s, norm_a, env_a, r, v, logp, done):
         self.states.append(s)
-        self.raw_actions.append(raw_a)
+        self.norm_actions.append(norm_a)
         self.env_actions.append(env_a)
         self.rewards.append(r)
         self.values.append(v)
@@ -84,7 +84,7 @@ class ReplayMemory:
         self.dones.append(done)
  
     def clear(self):
-        self.states, self.raw_actions, self.env_actions, self.rewards = [], [], [], []
+        self.states, self.norm_actions, self.env_actions, self.rewards = [], [], [], []
         self.values, self.log_probs, self.dones = [], [], []
 
     def __len__(self):
@@ -93,7 +93,7 @@ class ReplayMemory:
     def as_numpy(self):
         return (
             np.array(self.states, dtype=np.float32),
-            np.array(self.raw_actions, dtype=np.float32),
+            np.array(self.norm_actions, dtype=np.float32),
             np.array(self.env_actions, dtype=np.float32),
             np.array(self.rewards, dtype=np.float32),
             np.array(self.values, dtype=np.float32),
@@ -116,18 +116,19 @@ class PPOAgent:
         batch_size,
         action_low=None,
         action_high=None,
-        hidden_dim=128,
+        hidden_dim=64,
         lr_actor=3e-4,
-        lr_critic=1e-3,
+        lr_critic=3e-4,
         gamma=0.99,
         gae_lambda=0.95,
         epochs=10,
         clip_epsilon=0.2,
-        entropy_coef=0.01,
+        entropy_coef=0.0,
         value_coef=0.5,
         max_grad_norm=0.5,
         target_kl=0.02,
-        log_std_init=-0.5,
+        log_std_init=0.0,
+        clip_value_loss=True,
         run_device=None,
     ):
         self.device = run_device or device
@@ -141,6 +142,7 @@ class PPOAgent:
         self.VF_COEF = value_coef
         self.MAX_GRAD_NORM = max_grad_norm
         self.TARGET_KL = target_kl
+        self.CLIP_VALUE_LOSS = clip_value_loss
 
         self.actor = Actor(state_dim, action_dim, hidden_dim, log_std_init).to(self.device)
         self.critic = Critic(state_dim, hidden_dim).to(self.device)
@@ -153,28 +155,35 @@ class PPOAgent:
         self.action_high = _to_tensor(high, self.device)
         self.action_scale = (self.action_high - self.action_low) / 2.0
         self.action_bias = (self.action_high + self.action_low) / 2.0
-        self._eps = 1e-6
+        self._last_lr_actor = lr_actor
+        self._last_lr_critic = lr_critic
 
-    def _squash_action(self, raw_action):
-        return torch.tanh(raw_action) * self.action_scale + self.action_bias
+    def set_lr_scale(self, scale):
+        self._last_lr_actor = self.LR_ACTOR * scale
+        self._last_lr_critic = self.LR_CRITIC * scale
+        self.actor_optim.param_groups[0]["lr"] = self._last_lr_actor
+        self.critic_optim.param_groups[0]["lr"] = self._last_lr_critic
 
-    def _log_prob_from_raw_action(self, dist, raw_action):
-        squashed = torch.tanh(raw_action)
-        log_prob = dist.log_prob(raw_action) - torch.log(1.0 - squashed.pow(2) + self._eps)
-        return log_prob.sum(dim=-1)
+    def _scale_action(self, norm_action):
+        clipped = torch.clamp(norm_action, -1.0, 1.0)
+        return clipped * self.action_scale + self.action_bias
+
+    @staticmethod
+    def _log_prob(dist, norm_action):
+        return dist.log_prob(norm_action).sum(dim=-1)
  
     # ------------------------------------------------------------------ sample
     @torch.no_grad()
     def get_action(self, state, deterministic=False):
         s = _to_tensor(state, self.device).unsqueeze(0)
         dist = self.actor.get_dist(s)
-        raw_action = dist.mean if deterministic else dist.rsample()
-        action = self._squash_action(raw_action)
-        log_prob = self._log_prob_from_raw_action(dist, raw_action)
+        norm_action = dist.mean if deterministic else dist.sample()
+        action = self._scale_action(norm_action)
+        log_prob = self._log_prob(dist, norm_action)
         value = self.critic(s).squeeze(-1)
         return (
             action.cpu().numpy()[0],
-            raw_action.cpu().numpy()[0],
+            norm_action.cpu().numpy()[0],
             value.cpu().numpy()[0],
             log_prob.cpu().numpy()[0],
         )
@@ -202,17 +211,18 @@ class PPOAgent:
         return adv, returns
  
     def update(self, last_value):
-        states, raw_actions, _, rewards, values, old_log_probs, dones = self.buffer.as_numpy()
+        states, norm_actions, _, rewards, values, old_log_probs, dones = self.buffer.as_numpy()
         adv, returns = self._compute_gae(rewards, values, dones, last_value)
  
         # Advantage normalization is a well-known stabilizer.
         adv = (adv - adv.mean()) / (adv.std() + 1e-8)
  
         states_t = _to_tensor(states, self.device)
-        raw_actions_t = _to_tensor(raw_actions, self.device)
+        norm_actions_t = _to_tensor(norm_actions, self.device)
         old_logp_t = _to_tensor(old_log_probs, self.device)
         adv_t = _to_tensor(adv, self.device)
         returns_t = _to_tensor(returns, self.device)
+        values_t = _to_tensor(values, self.device)
  
         T = len(states)
         update_info = {}
@@ -220,16 +230,27 @@ class PPOAgent:
             approx_kl_epoch = 0.0
             for batch in self.buffer.iter_batches(T):
                 dist = self.actor.get_dist(states_t[batch])
-                logp = self._log_prob_from_raw_action(dist, raw_actions_t[batch])
+                logp = self._log_prob(dist, norm_actions_t[batch])
                 entropy = dist.entropy().sum(dim=-1).mean()
- 
-                ratio = torch.exp(logp - old_logp_t[batch])
+
+                logratio = logp - old_logp_t[batch]
+                ratio = torch.exp(logratio)
                 s1 = ratio * adv_t[batch]
                 s2 = torch.clamp(ratio, 1 - self.EPSILON_CLIP, 1 + self.EPSILON_CLIP) * adv_t[batch]
                 actor_loss = -torch.min(s1, s2).mean() - self.ENTROPY_COEF * entropy
  
                 value_pred = self.critic(states_t[batch]).squeeze(-1)
-                critic_loss = nn.MSELoss()(value_pred, returns_t[batch])
+                if self.CLIP_VALUE_LOSS:
+                    value_clipped = values_t[batch] + torch.clamp(
+                        value_pred - values_t[batch],
+                        -self.EPSILON_CLIP,
+                        self.EPSILON_CLIP,
+                    )
+                    value_loss = (value_pred - returns_t[batch]).pow(2)
+                    value_loss_clipped = (value_clipped - returns_t[batch]).pow(2)
+                    critic_loss = 0.5 * torch.max(value_loss, value_loss_clipped).mean()
+                else:
+                    critic_loss = 0.5 * (value_pred - returns_t[batch]).pow(2).mean()
  
                 self.actor_optim.zero_grad()
                 actor_loss.backward()
@@ -242,16 +263,18 @@ class PPOAgent:
                 self.critic_optim.step()
 
                 with torch.no_grad():
-                    approx_kl_epoch = max(
-                        approx_kl_epoch,
-                        (old_logp_t[batch] - logp).mean().abs().item(),
-                    )
+                    approx_kl = ((ratio - 1.0) - logratio).mean().item()
+                    approx_kl_epoch = max(approx_kl_epoch, approx_kl)
+                    clip_fraction = ((ratio - 1.0).abs() > self.EPSILON_CLIP).float().mean().item()
 
                 update_info = {
                     "actor_loss": float(actor_loss.detach().cpu()),
                     "critic_loss": float(critic_loss.detach().cpu()),
                     "entropy": float(entropy.detach().cpu()),
                     "approx_kl": approx_kl_epoch,
+                    "clip_fraction": clip_fraction,
+                    "lr_actor": self._last_lr_actor,
+                    "lr_critic": self._last_lr_critic,
                 }
 
             if self.TARGET_KL and approx_kl_epoch > self.TARGET_KL:

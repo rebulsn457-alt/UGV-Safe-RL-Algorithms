@@ -84,21 +84,23 @@ def parse_args():
     parser.add_argument("--env-module", default="", help="Optional module to import before gym.make, e.g. a Gazebo env registration package.")
     parser.add_argument("--episodes", type=int, default=400)
     parser.add_argument("--max-steps", type=int, default=0, help="0 uses env.spec.max_episode_steps when available.")
-    parser.add_argument("--steps-per-update", type=int, default=1024)
+    parser.add_argument("--steps-per-update", type=int, default=1000)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--hidden-dim", type=int, default=128)
+    parser.add_argument("--hidden-dim", type=int, default=64)
     parser.add_argument("--lr-actor", type=float, default=3e-4)
-    parser.add_argument("--lr-critic", type=float, default=1e-3)
+    parser.add_argument("--lr-critic", type=float, default=3e-4)
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--gae-lambda", type=float, default=0.95)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--clip-epsilon", type=float, default=0.2)
-    parser.add_argument("--entropy-coef", type=float, default=0.01)
+    parser.add_argument("--entropy-coef", type=float, default=0.0)
     parser.add_argument("--value-coef", type=float, default=0.5)
     parser.add_argument("--max-grad-norm", type=float, default=0.5)
     parser.add_argument("--target-kl", type=float, default=0.02)
-    parser.add_argument("--log-std-init", type=float, default=-0.5)
+    parser.add_argument("--log-std-init", type=float, default=0.0)
+    parser.add_argument("--no-clip-value-loss", action="store_true", help="Disable PPO value-function clipping.")
+    parser.add_argument("--anneal-lr", action="store_true", help="Linearly anneal learning rates to zero during training.")
     parser.add_argument("--reward-scale", type=float, default=0.125, help="Pendulum-compatible default. Use 1.0 for already scaled UGV rewards.")
     parser.add_argument("--normalize-obs", action="store_true", help="Recommended for Gazebo/UGV state vectors with mixed units.")
     parser.add_argument("--normalize-reward", action="store_true", help="Useful when reward magnitude changes across vehicles.")
@@ -227,6 +229,7 @@ def main():
         max_grad_norm=args.max_grad_norm,
         target_kl=args.target_kl,
         log_std_init=args.log_std_init,
+        clip_value_loss=not args.no_clip_value_loss,
     )
 
     current_path = os.path.dirname(os.path.realpath(__file__))
@@ -245,6 +248,8 @@ def main():
     reward_buffer = np.empty(args.episodes, dtype=np.float32)
     best_eval_reward = -np.inf
     total_steps = 0
+    update_count = 0
+    max_total_steps = args.episodes * max_steps if max_steps > 0 else None
     last_state_for_update = None
     last_terminated_for_update = False
 
@@ -256,7 +261,7 @@ def main():
 
         while max_steps <= 0 or steps < max_steps:
             norm_state = preprocess_state(state, obs_rms, update_stats=True)
-            action, raw_action, value, log_prob = agent.get_action(norm_state)
+            action, norm_action, value, log_prob = agent.get_action(norm_state)
             next_state, reward, terminated, truncated, info = step_env(env, action)
 
             done_for_buffer = 1.0 if terminated else 0.0
@@ -264,7 +269,7 @@ def main():
             if reward_norm is not None:
                 train_reward = reward_norm.normalize(train_reward, terminated or truncated)
 
-            agent.buffer.add(norm_state, raw_action, action, train_reward, value, log_prob, done_for_buffer)
+            agent.buffer.add(norm_state, norm_action, action, train_reward, value, log_prob, done_for_buffer)
             state = next_state
             last_state_for_update = state
             last_terminated_for_update = terminated
@@ -274,11 +279,16 @@ def main():
             total_steps += 1
 
             if len(agent.buffer) >= args.steps_per_update:
+                if args.anneal_lr and max_total_steps:
+                    progress = 1.0 - min(total_steps, max_total_steps) / max_total_steps
+                    agent.set_lr_scale(max(progress, 0.0))
                 last_state = preprocess_state(state, obs_rms, update_stats=False)
                 last_value = 0.0 if terminated else agent.get_value(last_state)
                 update_info = agent.update(last_value=last_value)
+                update_count += 1
                 for key, value_item in update_info.items():
                     writer.add_scalar(f"Update/{key}", value_item, total_steps)
+                writer.add_scalar("Update/count", update_count, total_steps)
 
             if terminated or truncated:
                 break

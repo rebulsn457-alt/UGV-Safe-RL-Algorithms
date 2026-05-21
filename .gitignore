@@ -51,6 +51,10 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Reinforcement-learning run artifacts
+algorithms/ppo-baseline/logs/
+algorithms/ppo-baseline/models/
+
 # Translations
 *.mo
 *.pot
