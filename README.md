@@ -1,37 +1,76 @@
 # UGV-Safe-RL-Algorithms
-无人车安全路径规划算法库 - 大创项目。当前阶段：已复现 PPO 基础框架并针对连续空间完成 GAE 优化与力矩映射修正。后续计划：对接 Gazebo 实现避障并引入 TRPO/CPO 算法。
 
-# 🚀 训练成果展示 (2026-04-12 更新)
+无人车安全路径规划强化学习算法库。当前重点是把 PPO baseline 从单一 `Pendulum-v1` 实验改造成可迁移到不同小车与 Gazebo 环境的连续控制训练入口，并为后续 CPO/TRPO 等安全约束算法预留接口。
 
-本次更新包含了优化后的 PPO 算法及其训练结果：
+## 当前 PPO 泛化改造
 
-- 算法改进：使用了 'nn.Tanh()' 激活函数替代 ReLU，并引入了奖励缩放 '(r + 8) / 8'。
-- 最佳表现：平均奖励达到 -1.09 (Pendulum-v1 环境)。
-- 模型权重：'models/best_ppo_actor.pth'。
+主要代码：
 
-## 训练收敛曲线
-![Stable Curve](./stable_curve.png)
+- `algorithms/ppo-baseline/ppo_agent.py`
+- `algorithms/ppo-baseline/ppo._training.py`
 
-## 🚀 训练成果展示 (2026-05-10 更新)
+已完成的泛化优化：
 
-本次更新包含了深度优化后的 PPO 算法及其在标准环境下的卓越训练结果：
+- 自动读取环境 `observation_space` 与 `action_space`，不再硬编码 Pendulum 的状态维度、动作维度和 `[-2, 2]` 动作范围。
+- 使用 tanh-squashed Gaussian policy，把网络输出稳定映射到任意连续动作上下界，避免原先 `clamp` 后 log probability 不一致导致 PPO ratio 偏移。
+- PPO 超参数全部改为命令行配置，包括学习率、`gamma`、GAE lambda、clip、entropy、target KL、batch size、rollout 长度等。
+- 按 `steps-per-update` 收集 rollout，而不是按固定 episode 数更新，更适合 Gazebo 中可变 episode 长度。
+- 兼容 `gymnasium` 和旧版 `gym`，便于 Ubuntu + VSCode + Gazebo 工作流。
+- 支持 observation normalization 和 reward normalization，适配不同车辆质量、速度量纲、传感器量纲变化。
+- 保存训练配置、TensorBoard 日志、reward 曲线、最佳模型权重；如果启用观测归一化，也会保存对应 normalizer 参数。
 
-算法改进：
+## Ubuntu/VSCode 快速运行
 
-参数精细调优：通过优化学习率（Learning Rate）与优势函数归一化策略，显著提升了训练初期的探索效率。
+建议在虚拟机 Ubuntu 项目目录中执行：
 
-极速收敛控制：实现了在 400 个 Episode 内从零基础到完美控制的跨越，相比常规训练提升了约 50% 的收敛速度。
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cd algorithms/ppo-baseline
+python ppo._training.py --env-id Pendulum-v1 --episodes 400 --normalize-obs
+```
 
-最佳表现：
+如果要尽量复现旧版 Pendulum reward 尺度，默认 `--reward-scale` 已设置为 `0.125`。如果你的 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，建议改成：
 
-平均奖励：最后 20 轮稳定在 -278 左右（Pendulum-v1 环境）。
+```bash
+python ppo._training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normalize-obs --normalize-reward
+```
 
-巅峰单局：最高奖励达到 -0.67，实现了近乎完美的直立平衡控制。
+## 对接其他小车/Gazebo 的接口要求
 
-模型权重：models/best_ppo_actor.pth
-训练收敛曲线：
-<img width="1000" height="500" alt="my_ppo_result_20260506211251" src="https://github.com/user-attachments/assets/3163d81f-689c-4128-8892-f23d8df27b91" />
+环境需要提供 Gym/Gymnasium 风格接口：
 
+- `reset()` 返回一维状态向量，或 `(state, info)`。
+- `step(action)` 返回 `(next_state, reward, terminated, truncated, info)`，旧 Gym 的 `(next_state, reward, done, info)` 也兼容。
+- `observation_space.shape` 必须是一维，例如 `(state_dim,)`。
+- `action_space` 必须是连续 `Box`，并且 `low/high` 是有限值。
 
-训练收敛曲线
-更新日志：本阶段已确立了强健的算法基准（Baseline）。该模型在 1.0kg 标准负载下表现完美，为下一阶段开展跨质量（0.5kg - 2.0kg）泛化性实验奠定了坚实的算法基础。
+不同小车建议优先配置这些项：
+
+```bash
+python ppo._training.py \
+  --env-module your_gazebo_env_package \
+  --env-id YourGazeboUGVEnv-v0 \
+  --episodes 1000 \
+  --steps-per-update 2048 \
+  --batch-size 128 \
+  --gamma 0.99 \
+  --gae-lambda 0.95 \
+  --entropy-coef 0.01 \
+  --target-kl 0.02 \
+  --reward-scale 1.0 \
+  --normalize-obs \
+  --normalize-reward
+```
+
+## 后续 CPO 接入建议
+
+CPO 需要环境额外返回或计算安全代价 `cost`，例如碰撞、越界、距离障碍物过近、速度/角速度超限。建议后续把 `info["cost"]` 作为统一入口：
+
+```python
+next_state, reward, terminated, truncated, info = env.step(action)
+cost = info.get("cost", 0.0)
+```
+
+这样 PPO、PPO-Lagrangian、CPO 可以共用同一个 Gazebo wrapper，算法侧只切换优化器和约束处理。
