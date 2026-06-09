@@ -54,6 +54,7 @@ cover/
 # Reinforcement-learning run artifacts
 algorithms/ppo-baseline/logs/
 algorithms/ppo-baseline/models/
+algorithms/ppo-baseline/eval_logs/
 
 # Translations
 *.mo

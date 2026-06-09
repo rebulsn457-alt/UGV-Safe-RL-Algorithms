@@ -293,3 +293,13 @@ class PPOAgent:
             },
             path,
         )
+
+    def load_policy(self, path, map_location=None):
+        try:
+            checkpoint = torch.load(path, map_location=map_location or self.device, weights_only=False)
+        except TypeError:
+            checkpoint = torch.load(path, map_location=map_location or self.device)
+        self.actor.load_state_dict(checkpoint["actor"])
+        if "critic" in checkpoint:
+            self.critic.load_state_dict(checkpoint["critic"])
+        return checkpoint

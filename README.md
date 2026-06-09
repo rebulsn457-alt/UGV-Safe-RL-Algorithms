@@ -8,6 +8,11 @@
 
 - `algorithms/ppo-baseline/ppo_agent.py`
 - `algorithms/ppo-baseline/ppo._training.py`
+- `algorithms/ppo-baseline/safe_ugv_env.py`
+- `algorithms/ppo-baseline/ppo_lagrangian_agent.py`
+- `algorithms/ppo-baseline/ppo_lagrangian_training.py`
+- `algorithms/ppo-baseline/evaluate_policy.py`
+- `algorithms/ppo-baseline/gazebo_ugv_env_template.py`
 
 已完成的泛化优化：
 
@@ -19,6 +24,9 @@
 - 兼容 `gymnasium` 和旧版 `gym`，便于 Ubuntu + VSCode + Gazebo 工作流。
 - 支持 observation normalization 和 reward normalization，适配不同车辆质量、速度量纲、传感器量纲变化。
 - 保存训练配置、TensorBoard 日志、reward 曲线、最佳模型权重；如果启用观测归一化，也会保存对应 normalizer 参数。
+- 新增 `SafeUGV-v0` 本地无人车路径规划环境：30 维观测、2 维动作、成功/碰撞/超时事件、安全 cost、路径长度和平滑度统计。
+- 新增 PPO-Lagrangian 最小实现：reward critic + cost critic + 动态拉格朗日乘子，用于安全约束强化学习中期展示和后续 CPO 对接。
+- 新增独立评估脚本，自动输出 success rate、collision rate、timeout rate、mean cost、path length、smoothness 等指标。
 
 ## Ubuntu/VSCode 快速运行
 
@@ -39,6 +47,100 @@ python ppo._training.py --env-id Pendulum-v1 --episodes 400
 
 训练时的 `train_mean` 是随机采样策略的回报，会比确定性评估低；判断是否收敛优先看 `eval_mean`。
 
+## 本地 UGV 安全路径规划训练
+
+在还没有 ROS/Gazebo 的情况下，算法组先用 `SafeUGV-v0` 做无人车风格任务闭环。该环境对齐学长论文中的接口思路：
+
+- 观测：30 维，24 维模拟激光雷达 + 6 维辅助状态。
+- 动作：2 维连续动作，线速度和角速度。
+- 安全代价：通过 `info["cost"]` 返回，碰撞为 1，距离障碍过近时返回软 cost。
+- 事件：通过 `info["event"]`、`success`、`collision`、`timeout` 自动统计。
+
+今晚快速 smoke test：
+
+```bash
+cd algorithms/ppo-baseline
+python ppo._training.py \
+  --env-module safe_ugv_env \
+  --env-id SafeUGV-v0 \
+  --episodes 80 \
+  --steps-per-update 1024 \
+  --eval-interval 10 \
+  --eval-episodes 5 \
+  --reward-scale 0.02 \
+  --normalize-obs \
+  --run-name safe_ugv_ppo_smoke
+```
+
+明天建议跑更长训练：
+
+```bash
+python ppo._training.py \
+  --env-module safe_ugv_env \
+  --env-id SafeUGV-v0 \
+  --episodes 600 \
+  --steps-per-update 2048 \
+  --batch-size 128 \
+  --hidden-dim 128 \
+  --eval-interval 20 \
+  --eval-episodes 10 \
+  --reward-scale 0.02 \
+  --normalize-obs \
+  --run-name safe_ugv_ppo_600
+```
+
+PPO-Lagrangian 安全约束训练：
+
+```bash
+python ppo_lagrangian_training.py \
+  --episodes 600 \
+  --steps-per-update 2048 \
+  --batch-size 128 \
+  --eval-interval 20 \
+  --eval-episodes 10 \
+  --run-name safe_ugv_ppolag_600
+```
+
+训练过程中会打印：
+
+- `success`：自动成功率。
+- `collision`：自动碰撞率。
+- `cost` / `eval_cost`：安全代价。
+- `lambda`：PPO-Lagrangian 的动态拉格朗日乘子。
+
+训练日志会保存到 `algorithms/ppo-baseline/logs/<run_name>/`，其中 `eval_metrics.csv` 可直接放进中期材料。
+
+Codex 本地 CPU smoke/probe 验证结果：
+
+- PPO，`SafeUGV-v0`，200 episodes：`eval_mean` 从约 `-120` 提升到约 `71`，`success_rate` 达到 `0.60`，`collision_rate` 降到 `0.20`。
+- PPO-Lagrangian，`SafeUGV-v0`，200 episodes：后期 `collision_rate` 降到 `0.10`，`mean_cost` 最低约 `0.31`，说明安全代价已经进入优化闭环。
+
+说明：200 episodes 只是代码链路和趋势验证。正式中期材料建议跑 600-1000 episodes，并至少用 3 个随机种子汇总平均值。
+
+## 自动评估脚本
+
+训练完成后，用确定性策略评估：
+
+```bash
+python evaluate_policy.py \
+  --env-module safe_ugv_env \
+  --env-id SafeUGV-v0 \
+  --episodes 50 \
+  --hidden-dim 128
+```
+
+如果要先看随机策略 baseline：
+
+```bash
+python evaluate_policy.py \
+  --env-module safe_ugv_env \
+  --env-id SafeUGV-v0 \
+  --episodes 50 \
+  --random-policy
+```
+
+评估结果会保存到 `algorithms/ppo-baseline/eval_logs/<time>/summary.json` 和 `episodes.csv`。
+
 如果你的 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，建议改成：
 
 ```bash
@@ -53,6 +155,10 @@ python ppo._training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normal
 - `step(action)` 返回 `(next_state, reward, terminated, truncated, info)`，旧 Gym 的 `(next_state, reward, done, info)` 也兼容。
 - `observation_space.shape` 必须是一维，例如 `(state_dim,)`。
 - `action_space` 必须是连续 `Box`，并且 `low/high` 是有限值。
+- `info["cost"]` 建议始终存在，PPO 可以只记录它，PPO-Lagrangian/CPO 会用它参与优化。
+- `info["success"]`、`info["collision"]`、`info["timeout"]`、`info["path_length"]`、`info["smoothness"]` 建议用于自动评估。
+
+`gazebo_ugv_env_template.py` 是给后续算法-仿真接口组的模板。建模/仿真组需要在学长 Gazebo 虚拟机里保证 `/scan`、`/odom`、`/cmd_vel`、reset 相关服务可用；算法组只依赖 Gym wrapper，不直接把 PPO 写死到 ROS 细节里。
 
 不同小车建议优先配置这些项：
 
@@ -83,3 +189,10 @@ cost = info.get("cost", 0.0)
 ```
 
 这样 PPO、PPO-Lagrangian、CPO 可以共用同一个 Gazebo wrapper，算法侧只切换优化器和约束处理。
+
+当前优先级建议：
+
+1. 用 `SafeUGV-v0` 跑出 PPO 自动评估结果。
+2. 用 `ppo_lagrangian_training.py` 跑出 cost/lambda/collision 指标。
+3. 等 Gazebo 可用后，把 `gazebo_ugv_env_template.py` 补成真实 wrapper。
+4. CPO 作为后续对照算法继续复现，不建议在 Gazebo 未打通前强行把 CPO 作为唯一主线。
