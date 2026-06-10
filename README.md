@@ -123,6 +123,7 @@ Codex 本地 CPU smoke/probe 验证结果：
 - PPO-Lagrangian，`SafeUGV-v0`，200 episodes：后期 `collision_rate` 降到 `0.10`，`mean_cost` 最低约 `0.31`，说明安全代价已经进入优化闭环。
 - PPO，`SafeUGV-v0`，300 episodes：最后一轮 `success_rate=0.80`，`collision_rate=0.00`，`eval_mean_reward≈125.21`。
 - PPO-Lagrangian，`SafeUGV-v0`，300 episodes：最后一轮 `success_rate=0.40`，`collision_rate=0.00`，`mean_cost≈1.70`。
+- 三随机种子，`SafeUGV-v0`，base 配置，300 episodes：PPO 平均 `success_rate=0.6333`、`collision_rate=0.0000`；PPO-Lagrangian 平均 `success_rate=0.3667`、`collision_rate=0.0333`、`mean_cost=3.3135`。
 
 说明：200-300 episodes 只是代码链路和趋势验证。正式中期材料建议跑 600-1000 episodes，并至少用 3 个随机种子汇总平均值。
 
