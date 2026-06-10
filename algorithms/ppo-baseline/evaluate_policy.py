@@ -16,6 +16,11 @@ except ImportError:
 
 from ppo_agent import Actor
 
+try:
+    from safety_shield import LidarSafetyShield
+except ImportError:
+    LidarSafetyShield = None
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate PPO/PPO-Lagrangian policies with UGV safety metrics.")
@@ -29,6 +34,9 @@ def parse_args():
     parser.add_argument("--max-steps", type=int, default=250)
     parser.add_argument("--hidden-dim", type=int, default=128)
     parser.add_argument("--random-policy", action="store_true", help="Evaluate random actions as a baseline.")
+    parser.add_argument("--use-safety-shield", action="store_true", help="Filter actions before env.step for deployment-style evaluation.")
+    parser.add_argument("--shield-warning-distance", type=float, default=0.32)
+    parser.add_argument("--shield-stop-distance", type=float, default=0.18)
     parser.add_argument("--out-dir", default="eval_logs")
     return parser.parse_args()
 
@@ -43,6 +51,22 @@ def make_env(env_id, env_module="", env_kwargs=None):
     if env_module:
         importlib.import_module(env_module)
     return gym.make(env_id, **(env_kwargs or {}))
+
+
+def make_safety_shield(args, env):
+    if not args.use_safety_shield:
+        return None
+    if LidarSafetyShield is None:
+        raise ImportError("safety_shield.py is required when --use-safety-shield is enabled.")
+    action_high = np.asarray(env.action_space.high, dtype=np.float32)
+    lidar_rays = min(24, int(env.observation_space.shape[0]))
+    return LidarSafetyShield(
+        lidar_rays=lidar_rays,
+        warning_distance=args.shield_warning_distance,
+        stop_distance=args.shield_stop_distance,
+        max_speed=float(action_high[0]),
+        max_yaw_rate=float(action_high[1]),
+    )
 
 
 def reset_env(env, seed=None):
@@ -144,6 +168,7 @@ def main():
     env_kwargs = json.loads(args.env_kwargs)
     current_path = os.path.dirname(os.path.realpath(__file__))
     env = make_env(args.env_id, args.env_module, env_kwargs)
+    shield = make_safety_shield(args, env)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_path = "" if args.random_policy else (args.model_path or latest_model(current_path))
     normalizer_path = args.normalizer_path or matching_normalizer(model_path) or latest_normalizer(current_path)
@@ -169,6 +194,9 @@ def main():
             else:
                 norm_state = normalize_state(state, normalizer)
                 action = policy_action(actor, norm_state, env.action_space.low, env.action_space.high, device)
+            shield_info = {}
+            if shield is not None:
+                action, shield_info = shield.filter_action(action, state)
             state, reward, terminated, truncated, info = step_env(env, action)
             episode_reward += reward
             episode_cost += float(info.get("cost", 0.0)) if isinstance(info, dict) else 0.0
@@ -188,6 +216,7 @@ def main():
                 "smoothness": float(last_info.get("smoothness", 0.0)),
                 "steps": steps,
                 "event": str(last_info.get("event", "")),
+                "shield_active": int(bool(shield_info.get("shield_active", False))),
             }
         )
     env.close()
@@ -197,17 +226,18 @@ def main():
     summary["env_kwargs"] = env_kwargs
     summary["model_path"] = model_path or "random-policy"
     summary["normalizer_path"] = normalizer_path
+    summary["use_safety_shield"] = bool(args.use_safety_shield)
     out_dir = os.path.join(current_path, args.out_dir, time.strftime("%Y%m%d%H%M%S"))
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     with open(os.path.join(out_dir, "episodes.csv"), "w", encoding="utf-8") as f:
-        f.write("episode,reward,cost,success,collision,timeout,path_length,smoothness,steps,event\n")
+        f.write("episode,reward,cost,success,collision,timeout,path_length,smoothness,steps,event,shield_active\n")
         for row in rows:
             f.write(
                 f"{row['episode']},{row['reward']:.6f},{row['cost']:.6f},{row['success']},"
                 f"{row['collision']},{row['timeout']},{row['path_length']:.6f},"
-                f"{row['smoothness']:.6f},{row['steps']},{row['event']}\n"
+                f"{row['smoothness']:.6f},{row['steps']},{row['event']},{row['shield_active']}\n"
             )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     print("Saved:", out_dir)

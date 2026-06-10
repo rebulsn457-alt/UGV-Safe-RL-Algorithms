@@ -23,6 +23,11 @@ except ImportError:
 
 from ppo_lagrangian_agent import PPOLagrangianAgent
 
+try:
+    from safety_shield import LidarSafetyShield
+except ImportError:
+    LidarSafetyShield = None
+
 
 class NullWriter:
     def add_scalar(self, *args, **kwargs):
@@ -94,6 +99,9 @@ def parse_args():
     parser.add_argument("--lambda-lr", type=float, default=0.02)
     parser.add_argument("--lambda-init", type=float, default=0.0)
     parser.add_argument("--normalize-obs", action="store_true", default=True)
+    parser.add_argument("--use-safety-shield", action="store_true", help="Filter policy actions with a LiDAR safety shield before env.step.")
+    parser.add_argument("--shield-warning-distance", type=float, default=0.32)
+    parser.add_argument("--shield-stop-distance", type=float, default=0.18)
     parser.add_argument("--eval-interval", type=int, default=20)
     parser.add_argument("--eval-episodes", type=int, default=10)
     parser.add_argument("--save-dir", default="models")
@@ -117,6 +125,22 @@ def make_env(env_id, env_module="", env_kwargs=None):
     if not hasattr(env.action_space, "low") or not hasattr(env.action_space, "high"):
         raise TypeError("PPO-Lagrangian expects a continuous Box action space.")
     return env
+
+
+def make_safety_shield(args, env):
+    if not args.use_safety_shield:
+        return None
+    if LidarSafetyShield is None:
+        raise ImportError("safety_shield.py is required when --use-safety-shield is enabled.")
+    action_high = np.asarray(env.action_space.high, dtype=np.float32)
+    lidar_rays = min(24, int(env.observation_space.shape[0]))
+    return LidarSafetyShield(
+        lidar_rays=lidar_rays,
+        warning_distance=args.shield_warning_distance,
+        stop_distance=args.shield_stop_distance,
+        max_speed=float(action_high[0]),
+        max_yaw_rate=float(action_high[1]),
+    )
 
 
 def reset_env(env, seed=None):
@@ -148,8 +172,9 @@ def preprocess_state(state, obs_rms, update_stats):
     return obs_rms.normalize(state)
 
 
-def evaluate(agent, env_id, env_module, env_kwargs, episodes, seed, max_steps, obs_rms):
+def evaluate(agent, env_id, env_module, env_kwargs, episodes, seed, max_steps, obs_rms, shield_args=None):
     env = make_env(env_id, env_module, env_kwargs)
+    shield = make_safety_shield(shield_args, env) if shield_args is not None else None
     rewards, costs, path_lengths, smoothness, steps_list = [], [], [], [], []
     success = collision = timeout = 0
     for ep in range(episodes):
@@ -161,6 +186,8 @@ def evaluate(agent, env_id, env_module, env_kwargs, episodes, seed, max_steps, o
         while max_steps <= 0 or steps < max_steps:
             norm_state = preprocess_state(state, obs_rms, update_stats=False)
             action, _, _, _, _ = agent.get_action(norm_state, deterministic=True)
+            if shield is not None:
+                action, _ = shield.filter_action(action, state)
             state, reward, terminated, truncated, info = step_env(env, action)
             episode_reward += reward
             episode_cost += float(info.get("cost", 0.0)) if isinstance(info, dict) else 0.0
@@ -201,6 +228,7 @@ def main():
     set_seed(args.seed)
     env_kwargs = json.loads(args.env_kwargs)
     env = make_env(args.env_id, args.env_module, env_kwargs)
+    shield = make_safety_shield(args, env)
     try:
         env.action_space.seed(args.seed)
         env.observation_space.seed(args.seed)
@@ -271,6 +299,9 @@ def main():
         while max_steps <= 0 or steps < max_steps:
             norm_state = preprocess_state(state, obs_rms, update_stats=True)
             action, norm_action, value, cost_value, log_prob = agent.get_action(norm_state)
+            shield_info = {}
+            if shield is not None:
+                action, shield_info = shield.filter_action(action, state)
             next_state, reward, terminated, truncated, info = step_env(env, action)
             cost = float(info.get("cost", 0.0)) if isinstance(info, dict) else 0.0
 
@@ -312,11 +343,13 @@ def main():
         writer.add_scalar("Train/cost_violation", cost_violation, episode_i)
         writer.add_scalar("Train/lambda", agent.lagrange_lambda, episode_i)
         writer.add_scalar("Train/episode_steps", steps, episode_i)
+        if shield_info.get("shield_active"):
+            writer.add_scalar("Safety/shield_active", 1.0, total_steps)
 
         if (episode_i + 1) % args.eval_interval == 0:
             recent_reward = reward_buffer[max(0, episode_i - args.eval_interval + 1):episode_i + 1]
             recent_cost = cost_buffer[max(0, episode_i - args.eval_interval + 1):episode_i + 1]
-            eval_metrics = evaluate(agent, args.env_id, args.env_module, env_kwargs, args.eval_episodes, args.seed, max_steps, obs_rms)
+            eval_metrics = evaluate(agent, args.env_id, args.env_module, env_kwargs, args.eval_episodes, args.seed, max_steps, obs_rms, args)
             for key, metric_value in eval_metrics.items():
                 writer.add_scalar(f"Eval/{key}", metric_value, episode_i)
             print(
