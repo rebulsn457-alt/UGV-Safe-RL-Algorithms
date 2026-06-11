@@ -4,7 +4,7 @@
 
 本文档用于说明算法组如何把无人车安全路径规划任务建模为受约束马尔可夫决策过程（Constrained Markov Decision Process, CMDP），并说明当前仓库中的 PPO、PPO-Lagrangian、后续 CPO 与该建模之间的对应关系。
 
-## 1. 为什么 CMDP 属于算法组工作
+## 1.解释 CMDP 算法组工作
 
 普通 MDP 只关心最大化期望回报，容易把“尽快到达目标”和“避免碰撞”混在同一个 reward 里。无人车安全路径规划需要同时表达两件事：
 
