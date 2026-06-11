@@ -139,4 +139,4 @@ docs/evidence/algorithm_completion_20260611/
 - Eitan Altman, *Constrained Markov Decision Processes*, 1999.
 - Joshua Achiam et al., “Constrained Policy Optimization”, ICML 2017.
 - John Schulman et al., “Proximal Policy Optimization Algorithms”, 2017.
-- 张津硕学长论文：参考其 CMDP 建模、30 维状态、`/scan` `/odom` `/cmd_vel` 数据流与 Gazebo 桥接思路；本仓库代码为本项目算法组独立整理、复现和调参后的实现。
+- CMDP 建模、30 维状态、`/scan` `/odom` `/cmd_vel` 数据流与 Gazebo 桥接思路；本仓库代码为本项目算法组独立整理、复现和调参后的实现。
