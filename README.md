@@ -108,6 +108,9 @@ python ppo_lagrangian_training.py \
   --run-name safe_ugv_ppolag_600
 ```
 
+当前默认 PPO-Lagrangian 参数已经按虚拟机 CPU 实测调成偏稳的软约束组合：
+`cost_limit=8.0`、`lambda_lr=0.005`、`entropy_coef=0.02`。旧的更硬约束组合容易出现“安全但不前进”的 timeout 策略。
+
 训练过程中会打印：
 
 - `success`：自动成功率。
@@ -124,6 +127,9 @@ Codex 本地 CPU smoke/probe 验证结果：
 - PPO，`SafeUGV-v0`，300 episodes：最后一轮 `success_rate=0.80`，`collision_rate=0.00`，`eval_mean_reward≈125.21`。
 - PPO-Lagrangian，`SafeUGV-v0`，300 episodes：最后一轮 `success_rate=0.40`，`collision_rate=0.00`，`mean_cost≈1.70`。
 - 三随机种子，`SafeUGV-v0`，base 配置，300 episodes：PPO 平均 `success_rate=0.6333`、`collision_rate=0.0000`；PPO-Lagrangian 平均 `success_rate=0.3667`、`collision_rate=0.0333`、`mean_cost=3.3135`。
+- 虚拟机 Ubuntu CPU，PPO-Lagrangian soft 约束，400 episodes：最后一轮 `eval_mean_reward≈126.42`、`success_rate=0.80`、`collision_rate=0.00`。
+- 同一 checkpoint 100 episodes 独立评估：不开 shield 时 `success_rate=0.64`、`collision_rate=0.14`；修正雷达角度后的轻量 shield（`warning=0.08`、`stop=0.04`）为 `success_rate=0.69`、`collision_rate=0.00`。
+- 虚拟机 Ubuntu CPU，PPO-Lagrangian soft 约束，base 配置，seed 0/1/2，400 episodes：平均 `success_rate=0.6000`、`collision_rate=0.0000`、`eval_mean_reward≈96.46`。
 
 说明：200-300 episodes 只是代码链路和趋势验证。正式中期材料建议跑 600-1000 episodes，并至少用 3 个随机种子汇总平均值。
 
@@ -163,6 +169,8 @@ python evaluate_policy.py \
 ```
 
 安全屏蔽层对应项目接口图中的 `policy -> safety -> cmd_vel`。默认训练不强制开启 shield，因为 PPO 的 log probability 与被 shield 修改后的实际动作会有一定偏差；正式 Gazebo 演示和安全对比评估时建议开启。
+
+`SafeUGV-v0` 本地评估默认使用轻量阈值 `warning=0.08`、`stop=0.04`。如果接到真实 Gazebo `/scan`，建议从更保守的 `warning=0.16`、`stop=0.08` 开始，再根据小车半径和雷达量程微调。
 
 ## 多 seed / 多配置实验
 

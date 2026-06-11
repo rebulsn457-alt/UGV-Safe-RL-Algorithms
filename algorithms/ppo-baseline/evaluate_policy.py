@@ -35,8 +35,8 @@ def parse_args():
     parser.add_argument("--hidden-dim", type=int, default=128)
     parser.add_argument("--random-policy", action="store_true", help="Evaluate random actions as a baseline.")
     parser.add_argument("--use-safety-shield", action="store_true", help="Filter actions before env.step for deployment-style evaluation.")
-    parser.add_argument("--shield-warning-distance", type=float, default=0.32)
-    parser.add_argument("--shield-stop-distance", type=float, default=0.18)
+    parser.add_argument("--shield-warning-distance", type=float, default=0.08)
+    parser.add_argument("--shield-stop-distance", type=float, default=0.04)
     parser.add_argument("--out-dir", default="eval_logs")
     return parser.parse_args()
 

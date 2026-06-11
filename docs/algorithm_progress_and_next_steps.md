@@ -1,6 +1,6 @@
 # 算法组当前进展与下一步
 
-更新时间：2026-06-10
+更新时间：2026-06-11
 
 ## 1. 当前已完成
 
@@ -43,7 +43,21 @@
 | PPO | 3 | 0.6333 | 0.0000 | 0.3667 | 7.9833 | 98.9162 | 当前到达能力更好，适合作为 baseline 主展示 |
 | PPO-Lagrangian | 3 | 0.3667 | 0.0333 | 0.6000 | 3.3135 | 58.6752 | 安全代价更低，但到达率仍需继续调参 |
 
-中期建议解释：PPO 目前更容易学到到达策略；PPO-Lagrangian 已经证明 cost 能进入优化闭环，但需要继续调 `cost_limit`、`lambda_lr`、reward/cost scale 和 shield 策略，使安全性与到达率更平衡。
+2026-06-11 虚拟机 Ubuntu CPU 复验，`SafeUGV-v0`，PPO-Lagrangian soft 约束，seed 0，400 episodes：
+
+| 设置 | episodes/eval | success_rate | collision_rate | timeout_rate | mean_cost | mean_reward | 说明 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 训练中最后一轮评估 | 400 / 10 | 0.80 | 0.00 | 0.20 | 18.77 | 126.42 | `cost_limit=8.0`、`lambda_lr=0.005`、`entropy_coef=0.02` |
+| 独立评估，不开 shield | 100 | 0.64 | 0.14 | 0.22 | 6.53 | 84.79 | 策略本身已能到达，但仍有碰撞 |
+| 独立评估，修正后 light shield | 100 | 0.69 | 0.00 | 0.31 | 9.68 | 105.66 | `warning=0.08`、`stop=0.04`，碰撞归零且到达率不下降 |
+
+同一 soft 约束默认参数，base 配置，seed 0/1/2，400 episodes 汇总：
+
+| 算法 | seeds | 平均成功率 | 平均碰撞率 | 平均超时率 | 平均 cost | 平均 eval reward | 说明 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| PPO-Lagrangian soft | 3 | 0.6000 | 0.0000 | 0.4000 | 12.0716 | 96.4551 | 相比旧硬约束，到达率明显提升，碰撞保持为 0 |
+
+中期建议解释：PPO 目前可作为稳定 baseline；PPO-Lagrangian 已经证明 cost 能进入优化闭环。旧硬约束参数容易学成“安全但不前进”，当前推荐使用 soft 约束参数，并在部署/演示评估时打开修正后的轻量 shield。
 
 ## 3. 周五前建议目标
 
@@ -94,6 +108,19 @@ python evaluate_policy.py \
   --episodes 50 \
   --hidden-dim 128 \
   --use-safety-shield
+```
+
+如果在 Gazebo 中使用真实 `/scan`，建议先用更保守阈值：
+
+```bash
+python evaluate_policy.py \
+  --env-module gazebo_ugv_env \
+  --env-id GazeboUGV-v0 \
+  --episodes 50 \
+  --hidden-dim 128 \
+  --use-safety-shield \
+  --shield-warning-distance 0.16 \
+  --shield-stop-distance 0.08
 ```
 
 ## 5. 中期汇报建议表述

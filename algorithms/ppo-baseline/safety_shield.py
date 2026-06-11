@@ -12,12 +12,16 @@ from __future__ import annotations
 import numpy as np
 
 
+def _wrap_angle(angle):
+    return (angle + np.pi) % (2.0 * np.pi) - np.pi
+
+
 class LidarSafetyShield:
     def __init__(
         self,
         lidar_rays=24,
-        warning_distance=0.32,
-        stop_distance=0.18,
+        warning_distance=0.08,
+        stop_distance=0.04,
         max_speed=1.5,
         max_yaw_rate=1.2,
         front_fov_ratio=0.25,
@@ -44,8 +48,8 @@ class LidarSafetyShield:
                 "front_min_lidar": front_min,
             }
 
-        left_mean = float(np.mean(lidar[: self.lidar_rays // 2]))
-        right_mean = float(np.mean(lidar[self.lidar_rays // 2 :]))
+        left_mean = self._mean_sector(lidar, 0.0, np.pi / 2.0)
+        right_mean = self._mean_sector(lidar, -np.pi / 2.0, 0.0)
         # Positive yaw_rate turns left in our env convention. Turn toward the
         # side with more clearance.
         turn_sign = 1.0 if left_mean >= right_mean else -1.0
@@ -70,7 +74,21 @@ class LidarSafetyShield:
         }
 
     def _front_sector(self, lidar):
-        # In SafeUGVEnv the 24 rays start at -pi relative to heading and wrap
-        # around. The front sector is therefore split across both ends.
-        count = max(1, int(round(self.lidar_rays * self.front_fov_ratio / 2.0)))
-        return np.concatenate([lidar[:count], lidar[-count:]])
+        angles = self._ray_angles()
+        half_fov = np.pi * self.front_fov_ratio
+        mask = np.abs(angles) <= half_fov
+        if not np.any(mask):
+            mask[np.argmin(np.abs(angles))] = True
+        return lidar[mask]
+
+    def _mean_sector(self, lidar, min_angle, max_angle):
+        angles = self._ray_angles()
+        mask = (angles >= min_angle) & (angles <= max_angle)
+        if not np.any(mask):
+            return float(np.mean(lidar))
+        return float(np.mean(lidar[mask]))
+
+    def _ray_angles(self):
+        # SafeUGVEnv and GazeboUGVEnv expose scans in a normalized convention:
+        # 24 rays spanning [-pi, pi), so the forward ray is near the center.
+        return _wrap_angle(np.linspace(-np.pi, np.pi, self.lidar_rays, endpoint=False))

@@ -1,6 +1,6 @@
 # Gazebo-RL Interface Contract
 
-更新时间：2026-06-10
+更新时间：2026-06-11
 
 本文件用于对齐算法组、仿真组和算法-仿真连接组。当前确认接口为：
 
@@ -29,6 +29,8 @@ pipeline: scan + odom -> state -> policy -> safety -> cmd_vel -> Gazebo
 ```text
 normalized_lidar = clip(raw_lidar_meter / lidar_range, 0, 1)
 ```
+
+24 维雷达建议统一成 `[-pi, pi)` 的相对角度顺序，也就是正前方在数组中间附近。`gazebo_ugv_env.py` 会优先根据 `LaserScan.angle_min` 和 `angle_increment` 对 `/scan` 重采样，避免不同雷达驱动的数组起点不一致。
 
 ## 2. 动作空间 action
 
@@ -97,6 +99,7 @@ PPO 只记录 `cost`；PPO-Lagrangian/CPO 会用 `cost` 参与优化。
 - 前方雷达距离安全：直接放行动作。
 - 进入 warning distance：降低线速度。
 - 进入 stop distance：线速度置 0，并向更空的一侧转向。
+- shield 的前方扇区按雷达相对角度 `0` 附近计算；左/右避障按 `[-pi/2, 0]` 和 `[0, pi/2]` 的前半平面比较。
 
 默认训练不强制开启 shield，避免 PPO log probability 和实际动作不一致；评估、部署、Gazebo 演示时建议开启：
 
@@ -108,6 +111,8 @@ python evaluate_policy.py \
   --hidden-dim 128 \
   --use-safety-shield
 ```
+
+本地 `SafeUGV-v0` 评估推荐轻量阈值：`warning=0.08`、`stop=0.04`。Gazebo 真实 `/scan` 建议先从更保守的归一化阈值 `warning=0.16`、`stop=0.08` 开始，再根据 `lidar_range` 和小车半径调小或调大。
 
 ## 6. 当前仓库对应文件
 

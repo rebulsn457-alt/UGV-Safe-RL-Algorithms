@@ -51,8 +51,8 @@ class GazeboUGVConfig:
     goal_x: float = 6.0
     goal_y: float = 0.0
     use_safety_shield: bool = True
-    shield_warning_distance: float = 0.32
-    shield_stop_distance: float = 0.18
+    shield_warning_distance: float = 0.16
+    shield_stop_distance: float = 0.08
 
 
 class GazeboUGVEnv(gym.Env):
@@ -247,13 +247,26 @@ class GazeboUGVEnv(gym.Env):
     def _downsample_scan(self):
         if self.latest_scan is None:
             return np.ones(self.cfg.lidar_rays, dtype=np.float32)
-        ranges = np.asarray(self.latest_scan.ranges, dtype=np.float32)
+        msg = self.latest_scan
+        ranges = np.asarray(msg.ranges, dtype=np.float32)
         ranges = np.nan_to_num(ranges, nan=self.cfg.lidar_range, posinf=self.cfg.lidar_range, neginf=0.0)
         ranges = np.clip(ranges, 0.0, self.cfg.lidar_range)
         if ranges.size == 0:
             return np.ones(self.cfg.lidar_rays, dtype=np.float32)
-        bins = np.array_split(ranges, self.cfg.lidar_rays)
-        lidar = np.asarray([np.min(chunk) if len(chunk) else self.cfg.lidar_range for chunk in bins], dtype=np.float32)
+        angle_increment = float(getattr(msg, "angle_increment", 0.0) or 0.0)
+        if abs(angle_increment) > 1e-8:
+            source_angles = float(getattr(msg, "angle_min", -math.pi)) + np.arange(ranges.size) * angle_increment
+            target_angles = np.linspace(-math.pi, math.pi, self.cfg.lidar_rays, endpoint=False)
+            lidar = np.full(self.cfg.lidar_rays, self.cfg.lidar_range, dtype=np.float32)
+            max_angle_error = max(abs(angle_increment) * 1.5, math.pi / max(self.cfg.lidar_rays, 1))
+            for i, angle in enumerate(target_angles):
+                diffs = np.abs(self._angle_diff(source_angles, angle))
+                nearest = int(np.argmin(diffs))
+                if diffs[nearest] <= max_angle_error:
+                    lidar[i] = ranges[nearest]
+        else:
+            bins = np.array_split(ranges, self.cfg.lidar_rays)
+            lidar = np.asarray([np.min(chunk) if len(chunk) else self.cfg.lidar_range for chunk in bins], dtype=np.float32)
         return np.clip(lidar / self.cfg.lidar_range, 0.0, 1.0)
 
     def _pose_xy_yaw(self):
@@ -292,6 +305,10 @@ class GazeboUGVEnv(gym.Env):
     @staticmethod
     def _wrap_angle(angle):
         return float((angle + math.pi) % (2.0 * math.pi) - math.pi)
+
+    @staticmethod
+    def _angle_diff(a, b):
+        return (a - b + math.pi) % (2.0 * math.pi) - math.pi
 
 
 try:
