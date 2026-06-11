@@ -123,19 +123,13 @@ python evaluate_policy.py \
   --shield-stop-distance 0.08
 ```
 
-## 5. 中期汇报建议表述
-
-可以说：
+## 5. 中期汇报
 
 - “算法组已完成 PPO baseline 从连续控制基准任务到无人车风格任务的迁移。”
 - “当前环境采用 30 维状态和 `(v,w)` 连续动作，与 Gazebo 接口保持一致。”
 - “已实现 PPO-Lagrangian，使安全代价参与优化，并自动统计成功率、碰撞率和 cost。”
 - “已预留 ROS/Gazebo wrapper，后续在学长 Gazebo 虚拟机中验证 `/scan`、`/odom`、`/cmd_vel` 闭环。”
 
-不要说：
 
-- “CPO 已完全完成。”
-- “Gazebo 强化学习训练已经跑通。”
-- “学长论文结果就是本项目最终结果。”
 
 当前更稳妥的定位是：算法侧已经完成本地可训练闭环、安全约束算法雏形和 Gazebo 接口准备，下一步进入真实 Gazebo 联调。
