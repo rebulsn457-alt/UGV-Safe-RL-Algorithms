@@ -16,7 +16,9 @@
 - `algorithms/ppo-baseline/evaluate_policy.py`
 - `algorithms/ppo-baseline/run_safe_ugv_experiments.py`
 - `algorithms/ppo-baseline/gazebo_ugv_env_template.py`
+- `docs/cmdp_modeling.md`
 - `docs/gazebo_interface_contract.md`
+- `docs/evidence/algorithm_completion_20260611/`
 
 已完成的泛化优化：
 
@@ -32,7 +34,9 @@
 - 新增 `GazeboUGV-v0` ROS1/Gazebo wrapper：按 `/scan`、`/odom` 输入和 `/cmd_vel` 输出组织 Gym 接口。
 - 新增 safety shield：对应 `scan + odom -> state -> policy -> safety -> cmd_vel -> Gazebo` 中的 safety 层。
 - 新增 PPO-Lagrangian 最小实现：reward critic + cost critic + 动态拉格朗日乘子，用于安全约束强化学习中期展示和后续 CPO 对接。
+- 新增 CMDP 建模说明：明确状态、动作、奖励、安全代价、约束目标以及与 PPO-Lagrangian/CPO 的关系。
 - 新增独立评估脚本，自动输出 success rate、collision rate、timeout rate、mean cost、path length、smoothness 等指标。
+- 新增证据包：保存虚拟机训练 CSV、独立评估 JSON、训练日志摘要和结果图表，便于组内复核。
 
 ## Ubuntu/VSCode 快速运行
 

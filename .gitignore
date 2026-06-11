@@ -55,6 +55,10 @@ cover/
 algorithms/ppo-baseline/logs/
 algorithms/ppo-baseline/models/
 algorithms/ppo-baseline/eval_logs/
+models/
+
+# Local Codex/Python virtual environments
+.venv*/
 
 # Translations
 *.mo

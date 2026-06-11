@@ -1,0 +1,67 @@
+﻿/home/karwen/miniconda3/envs/ppo/bin/python ppo_lagrangian_training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --env-kwargs {} --episodes 400 --steps-per-update 1024 --batch-size 128 --hidden-dim 128 --eval-interval 20 --eval-episodes 10 --seed 0 --run-name safeugv_ppolag_base_seed0_20260611142131
+Ep 20/400 train_reward=-119.40 train_cost=3.96 eval_reward=-116.22 success=0.00 collision=1.00 eval_cost=4.25 lambda=0.000 steps=760
+Ep 40/400 train_reward=-124.86 train_cost=5.12 eval_reward=-113.19 success=0.00 collision=1.00 eval_cost=5.28 lambda=0.000 steps=1670
+Ep 60/400 train_reward=-113.66 train_cost=4.02 eval_reward=-113.29 success=0.00 collision=1.00 eval_cost=4.34 lambda=0.000 steps=2747
+Ep 80/400 train_reward=-96.33 train_cost=5.14 eval_reward=-62.11 success=0.10 collision=0.70 eval_cost=6.83 lambda=0.055 steps=4127
+Ep 100/400 train_reward=-80.14 train_cost=5.09 eval_reward=-19.20 success=0.30 collision=0.60 eval_cost=4.20 lambda=0.000 steps=5987
+Ep 120/400 train_reward=-57.29 train_cost=7.42 eval_reward=16.67 success=0.30 collision=0.30 eval_cost=4.65 lambda=0.058 steps=8205
+Ep 140/400 train_reward=10.66 train_cost=4.57 eval_reward=22.18 success=0.40 collision=0.40 eval_cost=4.69 lambda=0.000 steps=10161
+Ep 160/400 train_reward=-42.05 train_cost=3.84 eval_reward=38.87 success=0.50 collision=0.40 eval_cost=3.95 lambda=0.000 steps=12333
+Ep 180/400 train_reward=23.75 train_cost=4.55 eval_reward=57.58 success=0.60 collision=0.40 eval_cost=4.51 lambda=0.000 steps=14153
+Ep 200/400 train_reward=4.28 train_cost=5.55 eval_reward=117.49 success=0.80 collision=0.10 eval_cost=4.66 lambda=0.000 steps=16424
+Ep 220/400 train_reward=29.28 train_cost=5.29 eval_reward=85.97 success=0.70 collision=0.30 eval_cost=5.75 lambda=0.000 steps=18431
+Ep 240/400 train_reward=57.95 train_cost=5.52 eval_reward=85.28 success=0.70 collision=0.30 eval_cost=6.59 lambda=0.016 steps=20790
+Ep 260/400 train_reward=94.62 train_cost=4.01 eval_reward=84.67 success=0.70 collision=0.30 eval_cost=6.11 lambda=0.000 steps=22781
+Ep 280/400 train_reward=72.04 train_cost=6.77 eval_reward=109.26 success=0.80 collision=0.20 eval_cost=10.97 lambda=0.104 steps=25109
+Ep 300/400 train_reward=66.37 train_cost=7.91 eval_reward=86.65 success=0.70 collision=0.20 eval_cost=28.66 lambda=0.095 steps=27920
+Ep 320/400 train_reward=90.34 train_cost=4.79 eval_reward=110.23 success=0.80 collision=0.20 eval_cost=10.09 lambda=0.000 steps=29281
+Ep 340/400 train_reward=83.94 train_cost=9.98 eval_reward=102.05 success=0.70 collision=0.10 eval_cost=5.82 lambda=0.208 steps=31925
+Ep 360/400 train_reward=103.50 train_cost=4.54 eval_reward=84.71 success=0.60 collision=0.10 eval_cost=10.68 lambda=0.019 steps=33951
+Ep 380/400 train_reward=74.56 train_cost=6.60 eval_reward=96.17 success=0.70 collision=0.10 eval_cost=28.79 lambda=0.061 steps=35861
+Ep 400/400 train_reward=90.98 train_cost=4.72 eval_reward=126.42 success=0.80 collision=0.00 eval_cost=18.77 lambda=0.000 steps=37677
+Training done. Last 20 reward: 90.98241 Last 20 cost: 4.7162127 lambda: 0.0
+/home/karwen/miniconda3/envs/ppo/bin/python ppo_lagrangian_training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --env-kwargs {} --episodes 400 --steps-per-update 1024 --batch-size 128 --hidden-dim 128 --eval-interval 20 --eval-episodes 10 --seed 1 --run-name safeugv_ppolag_base_seed1_20260611142131
+Ep 20/400 train_reward=-119.50 train_cost=4.03 eval_reward=-117.00 success=0.00 collision=1.00 eval_cost=3.82 lambda=0.000 steps=675
+Ep 40/400 train_reward=-124.81 train_cost=4.44 eval_reward=-116.06 success=0.00 collision=1.00 eval_cost=4.44 lambda=0.000 steps=1659
+Ep 60/400 train_reward=-120.43 train_cost=5.79 eval_reward=-114.61 success=0.00 collision=1.00 eval_cost=5.04 lambda=0.000 steps=2697
+Ep 80/400 train_reward=-111.46 train_cost=4.36 eval_reward=-88.72 success=0.10 collision=0.90 eval_cost=4.26 lambda=0.008 steps=3600
+Ep 100/400 train_reward=-127.97 train_cost=4.93 eval_reward=-92.77 success=0.10 collision=0.90 eval_cost=4.26 lambda=0.041 steps=4916
+Ep 120/400 train_reward=-100.33 train_cost=7.34 eval_reward=-41.17 success=0.30 collision=0.70 eval_cost=8.12 lambda=0.076 steps=7130
+Ep 140/400 train_reward=-16.53 train_cost=4.60 eval_reward=-5.53 success=0.10 collision=0.10 eval_cost=10.89 lambda=0.002 steps=9314
+Ep 160/400 train_reward=-32.25 train_cost=7.67 eval_reward=51.73 success=0.40 collision=0.10 eval_cost=11.57 lambda=0.111 steps=12300
+Ep 180/400 train_reward=32.64 train_cost=4.21 eval_reward=42.55 success=0.30 collision=0.00 eval_cost=14.17 lambda=0.007 steps=15152
+Ep 200/400 train_reward=21.52 train_cost=10.26 eval_reward=40.85 success=0.30 collision=0.00 eval_cost=22.12 lambda=0.264 steps=18098
+Ep 220/400 train_reward=74.19 train_cost=5.57 eval_reward=63.24 success=0.40 collision=0.00 eval_cost=6.66 lambda=0.021 steps=21567
+Ep 240/400 train_reward=17.51 train_cost=9.16 eval_reward=62.88 success=0.40 collision=0.00 eval_cost=2.07 lambda=0.169 steps=24897
+Ep 260/400 train_reward=65.57 train_cost=5.27 eval_reward=52.22 success=0.40 collision=0.10 eval_cost=3.11 lambda=0.000 steps=28081
+Ep 280/400 train_reward=79.61 train_cost=6.34 eval_reward=63.21 success=0.40 collision=0.00 eval_cost=0.68 lambda=0.000 steps=31153
+Ep 300/400 train_reward=87.91 train_cost=7.01 eval_reward=29.04 success=0.20 collision=0.00 eval_cost=0.82 lambda=0.077 steps=34076
+Ep 320/400 train_reward=102.96 train_cost=7.86 eval_reward=30.58 success=0.20 collision=0.00 eval_cost=1.59 lambda=0.063 steps=36715
+Ep 340/400 train_reward=92.09 train_cost=4.97 eval_reward=10.55 success=0.20 collision=0.20 eval_cost=6.87 lambda=0.031 steps=39548
+Ep 360/400 train_reward=91.24 train_cost=7.71 eval_reward=26.97 success=0.20 collision=0.00 eval_cost=7.48 lambda=0.221 steps=42206
+Ep 380/400 train_reward=115.75 train_cost=7.77 eval_reward=28.83 success=0.20 collision=0.00 eval_cost=0.67 lambda=0.198 steps=44569
+Ep 400/400 train_reward=72.52 train_cost=7.17 eval_reward=51.04 success=0.30 collision=0.00 eval_cost=4.40 lambda=0.115 steps=47094
+Training done. Last 20 reward: 72.52216 Last 20 cost: 7.1666765 lambda: 0.1148820273876184
+/home/karwen/miniconda3/envs/ppo/bin/python ppo_lagrangian_training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --env-kwargs {} --episodes 400 --steps-per-update 1024 --batch-size 128 --hidden-dim 128 --eval-interval 20 --eval-episodes 10 --seed 2 --run-name safeugv_ppolag_base_seed2_20260611142131
+Ep 20/400 train_reward=-120.30 train_cost=4.32 eval_reward=-117.46 success=0.00 collision=1.00 eval_cost=4.07 lambda=0.000 steps=573
+Ep 40/400 train_reward=-128.77 train_cost=5.36 eval_reward=-120.62 success=0.00 collision=1.00 eval_cost=7.33 lambda=0.014 steps=1543
+Ep 60/400 train_reward=-131.99 train_cost=4.69 eval_reward=-121.24 success=0.00 collision=1.00 eval_cost=4.52 lambda=0.000 steps=2386
+Ep 80/400 train_reward=-127.12 train_cost=4.93 eval_reward=-117.60 success=0.00 collision=1.00 eval_cost=4.54 lambda=0.000 steps=3305
+Ep 100/400 train_reward=-114.25 train_cost=3.43 eval_reward=-90.14 success=0.10 collision=0.90 eval_cost=5.94 lambda=0.000 steps=4593
+Ep 120/400 train_reward=-105.81 train_cost=4.34 eval_reward=-71.53 success=0.20 collision=0.80 eval_cost=5.65 lambda=0.016 steps=5983
+Ep 140/400 train_reward=-51.91 train_cost=3.74 eval_reward=-40.12 success=0.30 collision=0.70 eval_cost=8.74 lambda=0.000 steps=7997
+Ep 160/400 train_reward=-42.15 train_cost=5.93 eval_reward=-5.32 success=0.40 collision=0.60 eval_cost=8.01 lambda=0.011 steps=10189
+Ep 180/400 train_reward=-33.21 train_cost=6.43 eval_reward=-17.90 success=0.30 collision=0.60 eval_cost=10.96 lambda=0.166 steps=12582
+Ep 200/400 train_reward=-17.57 train_cost=8.11 eval_reward=-3.43 success=0.20 collision=0.30 eval_cost=12.83 lambda=0.177 steps=15652
+Ep 220/400 train_reward=-16.45 train_cost=5.93 eval_reward=8.75 success=0.30 collision=0.30 eval_cost=22.88 lambda=0.052 steps=18598
+Ep 240/400 train_reward=-8.57 train_cost=11.11 eval_reward=72.55 success=0.60 collision=0.20 eval_cost=11.77 lambda=0.432 steps=21467
+Ep 260/400 train_reward=82.60 train_cost=6.10 eval_reward=32.97 success=0.30 collision=0.10 eval_cost=11.97 lambda=0.242 steps=24166
+Ep 280/400 train_reward=74.28 train_cost=3.78 eval_reward=81.27 success=0.60 collision=0.10 eval_cost=8.26 lambda=0.010 steps=26959
+Ep 300/400 train_reward=25.65 train_cost=5.74 eval_reward=115.28 success=0.70 collision=0.00 eval_cost=5.23 lambda=0.000 steps=29772
+Ep 320/400 train_reward=62.85 train_cost=3.61 eval_reward=131.14 success=0.80 collision=0.00 eval_cost=8.55 lambda=0.071 steps=32220
+Ep 340/400 train_reward=91.91 train_cost=9.90 eval_reward=102.05 success=0.70 collision=0.10 eval_cost=6.81 lambda=0.261 steps=35095
+Ep 360/400 train_reward=72.03 train_cost=7.77 eval_reward=129.69 success=0.80 collision=0.00 eval_cost=8.00 lambda=0.266 steps=37349
+Ep 380/400 train_reward=112.12 train_cost=4.06 eval_reward=129.38 success=0.80 collision=0.00 eval_cost=14.55 lambda=0.000 steps=40035
+Ep 400/400 train_reward=88.70 train_cost=7.69 eval_reward=111.91 success=0.70 collision=0.00 eval_cost=13.05 lambda=0.051 steps=42281
+Training done. Last 20 reward: 88.69741 Last 20 cost: 7.6907434 lambda: 0.05119390833377825
+Saved summary: /home/karwen/ppo_project/algorithms/ppo-baseline/logs/safe_ugv_experiment_summary_20260611142131.csv

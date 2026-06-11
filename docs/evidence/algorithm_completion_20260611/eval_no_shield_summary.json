@@ -1,0 +1,16 @@
+{
+  "episodes": 100,
+  "success_rate": 0.64,
+  "collision_rate": 0.14,
+  "timeout_rate": 0.22,
+  "mean_reward": 84.79485037669428,
+  "mean_cost": 6.533172783613205,
+  "mean_path_length": 9.140467527613557,
+  "mean_smoothness": 25.44419219138497,
+  "mean_steps": 144.95,
+  "env_id": "SafeUGV-v0",
+  "env_kwargs": {},
+  "model_path": "models/best_ppo_lagrangian_vm_tune_ppolag_soft_20260611133753.pth",
+  "normalizer_path": "models/obs_normalizer_vm_tune_ppolag_soft_20260611133753.npz",
+  "use_safety_shield": false
+}

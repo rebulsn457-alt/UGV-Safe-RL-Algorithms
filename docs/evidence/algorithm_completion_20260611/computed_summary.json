@@ -1,0 +1,68 @@
+{
+  "multiseed_mean": {
+    "success_rate": 0.600000003973643,
+    "collision_rate": 0.0,
+    "timeout_rate": 0.40000000099341076,
+    "mean_cost": 12.071624755859375,
+    "eval_mean_reward": 96.45510864257812
+  },
+  "rows": [
+    {
+      "algorithm": "ppolag",
+      "config": "base",
+      "seed": "0",
+      "run_name": "safeugv_ppolag_base_seed0_20260611142131",
+      "episode": "4.000000000000000000e+02",
+      "total_steps": "3.767700000000000000e+04",
+      "train_reward": "9.098240661621093750e+01",
+      "train_cost": "4.716212749481201172e+00",
+      "eval_mean_reward": "1.264227981567382812e+02",
+      "success_rate": "8.000000119209289551e-01",
+      "collision_rate": "0.000000000000000000e+00",
+      "timeout_rate": "2.000000029802322388e-01",
+      "mean_cost": "1.876571083068847656e+01",
+      "mean_path_length": "7.445037364959716797e+00",
+      "mean_smoothness": "3.290629196166992188e+01",
+      "mean_steps": "1.288999938964843750e+02",
+      "lambda": "0.000000000000000000e+00"
+    },
+    {
+      "algorithm": "ppolag",
+      "config": "base",
+      "seed": "1",
+      "run_name": "safeugv_ppolag_base_seed1_20260611142131",
+      "episode": "4.000000000000000000e+02",
+      "total_steps": "4.709400000000000000e+04",
+      "train_reward": "7.252216339111328125e+01",
+      "train_cost": "7.166676521301269531e+00",
+      "eval_mean_reward": "5.103527832031250000e+01",
+      "success_rate": "3.000000119209289551e-01",
+      "collision_rate": "0.000000000000000000e+00",
+      "timeout_rate": "6.999999880790710449e-01",
+      "mean_cost": "4.395400047302246094e+00",
+      "mean_path_length": "5.856251239776611328e+00",
+      "mean_smoothness": "5.853203582763671875e+01",
+      "mean_steps": "1.996000061035156250e+02",
+      "lambda": "1.148820295929908752e-01"
+    },
+    {
+      "algorithm": "ppolag",
+      "config": "base",
+      "seed": "2",
+      "run_name": "safeugv_ppolag_base_seed2_20260611142131",
+      "episode": "4.000000000000000000e+02",
+      "total_steps": "4.228100000000000000e+04",
+      "train_reward": "8.869741058349609375e+01",
+      "train_cost": "7.690743446350097656e+00",
+      "eval_mean_reward": "1.119072494506835938e+02",
+      "success_rate": "6.999999880790710449e-01",
+      "collision_rate": "0.000000000000000000e+00",
+      "timeout_rate": "3.000000119209289551e-01",
+      "mean_cost": "1.305376338958740234e+01",
+      "mean_path_length": "7.380589962005615234e+00",
+      "mean_smoothness": "6.988919830322265625e+01",
+      "mean_steps": "1.441000061035156250e+02",
+      "lambda": "5.119390785694122314e-02"
+    }
+  ]
+}
