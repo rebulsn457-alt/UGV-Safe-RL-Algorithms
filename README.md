@@ -36,7 +36,7 @@
 
 ## Ubuntu/VSCode 快速运行
 
-建议在虚拟机 Ubuntu 项目目录中执行：
+在虚拟机 Ubuntu 项目目录中执行：
 
 ```bash
 python3 -m venv .venv
@@ -56,14 +56,14 @@ python ppo._training.py --env-id Pendulum-v1 --episodes 400
 
 ## 本地 UGV 安全路径规划训练
 
-在还没有 ROS/Gazebo 的情况下，算法组先用 `SafeUGV-v0` 做无人车风格任务闭环。该环境对齐学长论文中的接口思路：
+在还没有 ROS/Gazebo 的情况下，算法组先用 `SafeUGV-v0` 做无人车风格任务闭环。该环境接口思路：
 
 - 观测：30 维，24 维模拟激光雷达 + 6 维辅助状态。
 - 动作：2 维连续动作，线速度和角速度。
 - 安全代价：通过 `info["cost"]` 返回，碰撞为 1，距离障碍过近时返回软 cost。
 - 事件：通过 `info["event"]`、`success`、`collision`、`timeout` 自动统计。
 
-今晚快速 smoke test：
+快速 smoke test：
 
 ```bash
 cd algorithms/ppo-baseline
@@ -79,7 +79,7 @@ python ppo._training.py \
   --run-name safe_ugv_ppo_smoke
 ```
 
-明天建议跑更长训练：
+更长训练：
 
 ```bash
 python ppo._training.py \
@@ -111,14 +111,14 @@ python ppo_lagrangian_training.py \
 当前默认 PPO-Lagrangian 参数已经按虚拟机 CPU 实测调成偏稳的软约束组合：
 `cost_limit=8.0`、`lambda_lr=0.005`、`entropy_coef=0.02`。旧的更硬约束组合容易出现“安全但不前进”的 timeout 策略。
 
-训练过程中会打印：
+训练过程中打印：
 
 - `success`：自动成功率。
 - `collision`：自动碰撞率。
 - `cost` / `eval_cost`：安全代价。
 - `lambda`：PPO-Lagrangian 的动态拉格朗日乘子。
 
-训练日志会保存到 `algorithms/ppo-baseline/logs/<run_name>/`，其中 `eval_metrics.csv` 可直接放进中期材料。
+训练日志保存到 `algorithms/ppo-baseline/logs/<run_name>/`， `eval_metrics.csv` 直接放进中期材料。
 
 Codex 本地 CPU smoke/probe 验证结果：
 
@@ -174,7 +174,7 @@ python evaluate_policy.py \
 
 ## 多 seed / 多配置实验
 
-建议中期前至少跑一组基础对照：
+中期前至少跑一组基础对照：
 
 ```bash
 python run_safe_ugv_experiments.py \
@@ -184,7 +184,7 @@ python run_safe_ugv_experiments.py \
   --episodes 600
 ```
 
-如果时间充足，再跑车辆/场景泛化：
+时间充足，再跑车辆/场景泛化：
 
 ```bash
 python run_safe_ugv_experiments.py \
@@ -196,7 +196,7 @@ python run_safe_ugv_experiments.py \
 
 脚本会把每次训练的最后一轮评估指标汇总到 `logs/safe_ugv_experiment_summary_<time>.csv`，方便直接放进中期材料。
 
-如果你的 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，建议改成：
+如果 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，改成：
 
 ```bash
 python ppo._training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normalize-obs --normalize-reward
@@ -253,7 +253,7 @@ cost = info.get("cost", 0.0)
 
 这样 PPO、PPO-Lagrangian、CPO 可以共用同一个 Gazebo wrapper，算法侧只切换优化器和约束处理。
 
-当前优先级建议：
+当前优先级：
 
 1. 用 `SafeUGV-v0` 跑出 PPO 自动评估结果。
 2. 用 `ppo_lagrangian_training.py` 跑出 cost/lambda/collision 指标。
