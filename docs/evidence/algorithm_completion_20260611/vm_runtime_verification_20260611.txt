@@ -1,0 +1,57 @@
+VM runtime verification for algorithm delivery
+Date: 2026-06-11
+
+Purpose
+This note records that the current algorithm code and key evidence were verified inside the Ubuntu VirtualBox VM used for later ROS/Gazebo integration, rather than relying on Windows-host-only execution.
+
+VM repository
+- VM project path: /home/karwen/ppo_project
+- Git commit verified in VM: 0cac0ef Finalize algorithm completion evidence and CMDP docs
+- VM remote: https://github.com/rebulsn457-alt/UGV-Safe-RL-Algorithms.git
+
+VM Python runtime
+- Python: 3.10.20
+- torch: 2.1.0+cpu
+- gymnasium: 1.2.3
+- numpy: 1.26.4
+- Interpreter: /home/karwen/miniconda3/envs/ppo/bin/python
+
+Syntax check
+Command run in /home/karwen/ppo_project/algorithms/ppo-baseline:
+/home/karwen/miniconda3/envs/ppo/bin/python -m py_compile ppo_agent.py ppo._training.py ppo_lagrangian_agent.py ppo_lagrangian_training.py safe_ugv_env.py safety_shield.py gazebo_ugv_env.py gazebo_ugv_env_template.py evaluate_policy.py run_safe_ugv_experiments.py
+
+Result: passed.
+
+Environment smoke test
+Command checked Gymnasium registration, observation size, action size, and one environment step for SafeUGV-v0.
+
+Output:
+obs_shape (30,)
+action_shape (2,)
+step (30,) -0.143 False False running 0.0
+
+Short PPO-Lagrangian VM smoke test
+Command run in /home/karwen/ppo_project/algorithms/ppo-baseline:
+/home/karwen/miniconda3/envs/ppo/bin/python ppo_lagrangian_training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --episodes 5 --steps-per-update 128 --batch-size 32 --eval-interval 5 --eval-episodes 2 --run-name vm_latest_smoke_ppolag
+
+Output:
+Ep 5/5 train_reward=-112.34 train_cost=4.86 eval_reward=-127.85 success=0.00 collision=1.00 eval_cost=3.22 lambda=0.000 steps=283
+Training done. Last 20 reward: -112.3408 Last 20 cost: 4.8555784 lambda: 0.0
+
+Short PPO VM smoke test
+Command run in /home/karwen/ppo_project/algorithms/ppo-baseline:
+/home/karwen/miniconda3/envs/ppo/bin/python -u ppo._training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --episodes 5 --steps-per-update 128 --batch-size 32 --eval-interval 5 --eval-episodes 2 --run-name vm_latest_smoke_ppo
+
+Output:
+Ep 5/5 train_mean=-114.90 eval_mean=-115.01 success=0.00 collision=1.00 cost=3.87 steps=176
+Training done. Last 20 mean: -114.89707 best eval: -115.0139341251232
+
+VM evidence files checked
+- /home/karwen/ppo_project/algorithms/ppo-baseline/logs/safe_ugv_experiment_summary_20260611142131.csv
+- /home/karwen/ppo_project/algorithms/ppo-baseline/logs/vm_tune_ppolag_soft_20260611133753/eval_metrics.csv
+- /home/karwen/ppo_project/algorithms/ppo-baseline/eval_logs/vm_tune_ppolag_soft_20260611133753_default_fixed_shield/20260611141922/summary.json
+
+Important interpretation
+- The 5-episode smoke tests are startup and integration checks only; they are not expected to converge.
+- The convergence and safety evidence comes from the longer VM runs already included in this evidence package: 400-episode PPO-Lagrangian multi-seed training and 100-episode independent shield evaluation.
+- Windows was used for repository editing, plotting/report generation from copied VM artifacts, and GitHub push. It was not used as the source of the final training/evaluation numbers.
