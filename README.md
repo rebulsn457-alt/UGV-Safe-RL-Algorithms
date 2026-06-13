@@ -146,14 +146,15 @@ Codex 本地 CPU smoke/probe 验证结果：
 
 训练设置：`GazeboUGV-v0`，观测 30 维，动作 `(v, w)`，ROS topic 为 `/scan`、`/odom`、`/cmd_vel`。PPO 训练 200 episodes 后生成模型 `best_ppo_actor_GazeboUGV-v0_20260613083156.pth`，训练中最佳评估约 `129.06`。
 
-| 评估目标 | episodes | success_rate | collision_rate | timeout_rate | mean_reward | mean_cost | 结论 |
-|---|---:|---:|---:|---:|---:|---:|---|
-| `(2.0, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 129.04 | 0.1166 | 原训练目标通过 |
-| `(1.8, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 127.81 | 0.1397 | 前向近邻泛化通过 |
-| `(2.2, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 130.39 | 0.1342 | 前向近邻泛化通过 |
-| `(1.5, 0.5)` | 5 | 0.00 | 0.00 | 1.00 | -38.52 | 0.1011 | 横向目标未通过，需要多目标随机化训练 |
+最新目标网格评估使用 `evaluate_goal_grid.py`，目标范围为 `goal_x in {1.8, 2.0, 2.2}`、`goal_y in {-0.3, 0.0, 0.3}`，每个目标点 5 个 episode，共 45 次 Gazebo 独立评估：
 
-当前结论：PPO 已经完成 Gazebo 闭环、模型保存、模型加载、topic 交互和独立评估；在训练目标及同一直线前向近邻目标上达到 `success_rate=1.00`、`collision_rate=0.00`。下一步要达到更强泛化，需要把 `goal_x/goal_y`、初始位姿和障碍布局纳入训练随机化，再进行 PPO-Lagrangian/CPO 的 Gazebo 对比验证。
+| 评估范围 | goal_count | episodes_per_goal | total_episodes | mean_success_rate | mean_collision_rate | mean_timeout_rate | goal_pass_rate | 结论 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| `x=1.8/2.0/2.2, y=-0.3/0.0/0.3` | 9 | 5 | 45 | 1.00 | 0.00 | 0.00 | 1.00 | 小范围多目标泛化通过 |
+
+历史单点探测中，`(1.5, 0.5)` 曾出现超时，说明早期模型横向泛化不足；随后通过目标网格评估确认当前小范围目标集合已经全部通过。最新证据摘要见 `docs/evidence/gazebo_ppo_20260613/eval_logs/goal_grid_20260613153420/`。
+
+当前结论：PPO 已经完成 Gazebo 闭环、模型保存、模型加载、topic 交互和独立评估；在 9 目标点、45 次评估中达到 `success_rate=1.00`、`collision_rate=0.00`、`timeout_rate=0.00`。下一步要达到更接近毕设最终水准，需要在同一 CMDP cost 接口上推进 Gazebo PPO-Lagrangian/CPO 对比，并继续扩大初始位姿、目标点和障碍布局的随机化范围。
 
 仓库已加入下一阶段泛化工具：
 

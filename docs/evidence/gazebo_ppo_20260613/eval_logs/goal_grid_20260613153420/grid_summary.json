@@ -1,0 +1,29 @@
+{
+  "env_id": "GazeboUGV-v0",
+  "source": "transcribed from physical-machine terminal output and goal结果.docx",
+  "physical_machine_path": "/home/ubuntu/桌面/UGV-Safe-RL-Algorithms_physical_merged_20260613_140915/UGV-Safe-RL-Algorithms/algorithms/ppo-baseline/eval_logs/goal_grid_20260613153420",
+  "model_path": "models/best_ppo_actor_GazeboUGV-v0_20260613083156.pth",
+  "normalizer_path": "none",
+  "episodes_per_goal": 5,
+  "goal_x_values": [1.8, 2.0, 2.2],
+  "goal_y_values": [-0.3, 0.0, 0.3],
+  "goal_count": 9,
+  "total_episodes": 45,
+  "success_threshold": 0.8,
+  "collision_threshold": 0.0,
+  "goal_pass_rate": 1.0,
+  "mean_success_rate": 1.0,
+  "mean_collision_rate": 0.0,
+  "mean_timeout_rate": 0.0,
+  "goals": [
+    {"goal_x": 1.8, "goal_y": -0.3, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 127.82, "passed": true},
+    {"goal_x": 2.0, "goal_y": -0.3, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 129.14, "passed": true},
+    {"goal_x": 2.2, "goal_y": -0.3, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 130.41, "passed": true},
+    {"goal_x": 1.8, "goal_y": 0.0, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 127.80, "passed": true},
+    {"goal_x": 2.0, "goal_y": 0.0, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 129.13, "passed": true},
+    {"goal_x": 2.2, "goal_y": 0.0, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 130.34, "passed": true},
+    {"goal_x": 1.8, "goal_y": 0.3, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 127.73, "passed": true},
+    {"goal_x": 2.0, "goal_y": 0.3, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 128.99, "passed": true},
+    {"goal_x": 2.2, "goal_y": 0.3, "episodes": 5, "success_rate": 1.0, "collision_rate": 0.0, "timeout_rate": 0.0, "mean_reward": 130.22, "passed": true}
+  ]
+}

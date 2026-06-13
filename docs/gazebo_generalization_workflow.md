@@ -44,12 +44,15 @@ python3 evaluate_goal_grid.py \
   --env-module gazebo_ugv_env \
   --env-id GazeboUGV-v0 \
   --model-path models/best_ppo_actor_GazeboUGV-v0_20260613083156.pth \
-  --goal-x-values 1.8,2.0,2.2 \
-  --goal-y-values -0.3,0.0,0.3 \
-  --episodes-per-goal 3 \
+  --normalizer-path none \
+  --goal-x-values=1.8,2.0,2.2 \
+  --goal-y-values=-0.3,0.0,0.3 \
+  --episodes-per-goal 5 \
   --max-steps 300 \
   --env-kwargs '{"scan_topic":"/scan","odom_topic":"/odom","cmd_vel_topic":"/cmd_vel","lidar_range":6.0,"max_speed":0.25,"max_yaw_rate":0.60,"robot_radius":0.20,"safety_margin":0.35,"shield_warning_distance":0.10,"shield_stop_distance":0.04,"use_safety_shield":true}'
 ```
+
+注意：`--goal-y-values` 中有负数，必须写成 `--goal-y-values=-0.3,0.0,0.3`，不要写成空格分隔；否则 `argparse` 会把 `-0.3` 误判成新的命令行参数。`--normalizer-path none` 用于避免误加载其他算法的 normalizer。
 
 输出会保存在：
 
@@ -59,7 +62,7 @@ eval_logs/goal_grid_<时间>/grid_summary.json
 eval_logs/goal_grid_<时间>/episodes.csv
 ```
 
-这一步的作用是形成基线：当前模型在哪些目标点能通过，哪些目标点超时。
+这一步的作用是形成基线：当前模型在哪些目标点能通过，哪些目标点超时。2026-06-13 物理机实测中，`goal_x=1.8/2.0/2.2`、`goal_y=-0.3/0.0/0.3` 的 9 个目标点、每点 5 个 episode 全部通过，汇总结果保存在 `eval_logs/goal_grid_20260613153420`。
 
 ## 4. 第一阶段：前向目标随机化训练
 

@@ -1,6 +1,6 @@
 # 算法组当前进展与下一步
 
-更新时间：2026-06-11
+更新时间：2026-06-13
 
 ## 1. 当前已完成
 
@@ -59,27 +59,22 @@
 
 中期建议解释：PPO 目前可作为稳定 baseline；PPO-Lagrangian 已经证明 cost 能进入优化闭环。旧硬约束参数容易学成“安全但不前进”，当前推荐使用 soft 约束参数，并在部署/演示评估时打开修正后的轻量 shield。
 
+2026-06-13 Gazebo 实机联调结果，`GazeboUGV-v0`，Ubuntu 20.04 + ROS Noetic + Gazebo11：
 
-2026-06-13 Gazebo ???????`GazeboUGV-v0`?Ubuntu 20.04 + ROS Noetic + Gazebo11?
+| 评估项目 | goal_count | episodes_per_goal | total_episodes | mean_success_rate | mean_collision_rate | mean_timeout_rate | goal_pass_rate | 说明 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| PPO-Gazebo 目标网格评估 | 9 | 5 | 45 | 1.00 | 0.00 | 0.00 | 1.00 | `goal_x=1.8/2.0/2.2`，`goal_y=-0.3/0.0/0.3` 全部通过 |
 
-| ??? | episodes | success_rate | collision_rate | timeout_rate | mean_reward | mean_cost | ?? |
-|---|---:|---:|---:|---:|---:|---:|---|
-| `(2.0, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 129.04 | 0.1166 | ?????? |
-| `(1.8, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 127.81 | 0.1397 | ???????? |
-| `(2.2, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 130.39 | 0.1342 | ???????? |
-| `(1.5, 0.5)` | 5 | 0.00 | 0.00 | 1.00 | -38.52 | 0.1011 | ???????????????? |
+该结果对应物理机目录 `eval_logs/goal_grid_20260613153420`，摘要已整理到 `docs/evidence/gazebo_ppo_20260613/eval_logs/goal_grid_20260613153420/`。当前可证明 PPO 已完成 Gazebo 闭环、topic 交互、模型保存加载、独立评估和小范围多目标泛化验证。下一阶段要提升到更接近毕设最终水准，需要继续做 Gazebo PPO-Lagrangian/CPO 对比，并扩大初始位姿、目标点和障碍布局随机化。
 
-?????? `docs/evidence/gazebo_ppo_20260613/`?????? PPO ??? Gazebo ???topic ???????????????????????????????????? Gazebo ???/?????????? PPO-Lagrangian/CPO ????? cost ???
-
-## 3. 周五前目标
+## 3. 周五前建议目标
 
 优先级从高到低：
 
-1. 跑 600 episodes，seed 0，PPO 和 PPO-Lagrangian 各一组。
-2. 跑 600 episodes，seed 0/1/2，形成均值表。
-3. 如果时间够，再跑 `small_slow`、`fast_wide`、`dense` 三种配置，展示泛化设计。
-4. 在学长 Gazebo 虚拟机中验证 `/scan`、`/odom`、`/cmd_vel` 是否可用。
-5. 如果 Gazebo topic 可用，测试 `GazeboUGV-v0.reset()` 和 `GazeboUGV-v0.step(action)`。
+1. 固定并备份 `goal_grid_20260613153420`、成功模型和运行命令，作为中期 PPO-Gazebo baseline 证据。
+2. 在同一 Gazebo/CMDP 接口上训练 PPO-Lagrangian，并对比 `success_rate`、`collision_rate`、`mean_cost`。
+3. 若时间足够，扩大目标网格到更大的 `goal_x/goal_y` 范围，并加入随机起点。
+4. 后续接入 CPO，复用 `info["cost"]`，不重新改环境接口。
 
 ## 4. 推荐运行命令
 
@@ -135,13 +130,13 @@ python evaluate_policy.py \
   --shield-stop-distance 0.08
 ```
 
-## 5. 当前中期可汇报
+## 5. 中期汇报
 
-- “算法组已完成 PPO baseline 从连续控制基准任务到无人车风格任务的迁移。”
-- “当前环境采用 30 维状态和 `(v,w)` 连续动作，与 Gazebo 接口保持一致。”
-- “已实现 PPO-Lagrangian，使安全代价参与优化，并自动统计成功率、碰撞率和 cost。”
-- “已预留 ROS/Gazebo wrapper，后续在学长 Gazebo 虚拟机中验证 `/scan`、`/odom`、`/cmd_vel` 闭环。”
+- “算法组已完成 PPO baseline 从连续控制基准任务到无人车 Gazebo 路径规划任务的迁移。”
+- “当前环境采用 30 维状态和 `(v,w)` 连续动作，已与 `/scan`、`/odom`、`/cmd_vel` 形成闭环。”
+- “已完成 9 个目标点、45 次 Gazebo 独立评估，PPO 策略达到 100% 成功率、0% 碰撞率和 0% 超时率。”
+- “已完成 CMDP 建模，统一了 reward 与 safety cost 接口，为 PPO-Lagrangian/CPO 对比提供基础。”
 
 
 
-当前更稳妥的定位是：算法侧已经完成本地可训练闭环、安全约束算法雏形和 Gazebo 接口准备，下一步进入真实 Gazebo 联调。
+当前更稳妥的定位是：算法侧已经完成 PPO-Gazebo 闭环验证、小范围目标泛化评估、CMDP 建模和 PPO-Lagrangian/CPO 接口准备；下一步进入安全约束算法在 Gazebo 中的系统对比。
