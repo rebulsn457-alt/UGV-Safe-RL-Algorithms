@@ -118,6 +118,8 @@ def parse_args():
     parser.add_argument("--save-dir", default="models")
     parser.add_argument("--log-dir", default="logs")
     parser.add_argument("--run-name", default="")
+    parser.add_argument("--init-model-path", default="", help="Optional PPO checkpoint to warm-start actor/critic.")
+    parser.add_argument("--init-normalizer-path", default="", help="Optional obs_normalizer_*.npz to warm-start observation stats.")
     return parser.parse_args()
 
 
@@ -249,6 +251,15 @@ def save_normalizer(path, obs_rms):
     )
 
 
+def load_normalizer(path, obs_rms):
+    if not path or obs_rms is None:
+        return
+    data = np.load(path)
+    obs_rms.mean = data["obs_mean"].astype(np.float64)
+    obs_rms.var = data["obs_var"].astype(np.float64)
+    obs_rms.count = float(data["obs_count"]) if "obs_count" in data else 1.0
+
+
 def main():
     args = parse_args()
     set_seed(args.seed)
@@ -307,6 +318,12 @@ def main():
 
     obs_rms = RunningMeanStd(shape=state_shape) if args.normalize_obs else None
     reward_norm = ReturnNormalizer(args.gamma) if args.normalize_reward else None
+    if args.init_model_path:
+        agent.load_policy(args.init_model_path)
+        print(f"Loaded initial PPO checkpoint: {args.init_model_path}")
+    if args.init_normalizer_path:
+        load_normalizer(args.init_normalizer_path, obs_rms)
+        print(f"Loaded initial observation normalizer: {args.init_normalizer_path}")
     reward_buffer = np.empty(args.episodes, dtype=np.float32)
     metric_rows = []
     best_eval_reward = -np.inf

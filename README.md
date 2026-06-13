@@ -14,10 +14,12 @@
 - `algorithms/ppo-baseline/ppo_lagrangian_agent.py`
 - `algorithms/ppo-baseline/ppo_lagrangian_training.py`
 - `algorithms/ppo-baseline/evaluate_policy.py`
+- `algorithms/ppo-baseline/evaluate_goal_grid.py`
 - `algorithms/ppo-baseline/run_safe_ugv_experiments.py`
 - `algorithms/ppo-baseline/gazebo_ugv_env_template.py`
 - `docs/cmdp_modeling.md`
 - `docs/gazebo_interface_contract.md`
+- `docs/gazebo_generalization_workflow.md`
 - `docs/evidence/algorithm_completion_20260611/`
 - `docs/evidence/gazebo_ppo_20260613/`
 
@@ -152,6 +154,12 @@ Codex 本地 CPU smoke/probe 验证结果：
 | `(1.5, 0.5)` | 5 | 0.00 | 0.00 | 1.00 | -38.52 | 0.1011 | 横向目标未通过，需要多目标随机化训练 |
 
 当前结论：PPO 已经完成 Gazebo 闭环、模型保存、模型加载、topic 交互和独立评估；在训练目标及同一直线前向近邻目标上达到 `success_rate=1.00`、`collision_rate=0.00`。下一步要达到更强泛化，需要把 `goal_x/goal_y`、初始位姿和障碍布局纳入训练随机化，再进行 PPO-Lagrangian/CPO 的 Gazebo 对比验证。
+
+仓库已加入下一阶段泛化工具：
+
+- `gazebo_ugv_env.py` 支持 `randomize_goal`、`goal_x_min/max`、`goal_y_min/max`，训练时可随机目标点。
+- `evaluate_goal_grid.py` 支持一次性评估多个 `(goal_x, goal_y)`，输出 `grid_summary.csv/json`，用于中期材料展示泛化性。
+- 详细操作流程见 `docs/gazebo_generalization_workflow.md`。
 
 ## 自动评估脚本
 

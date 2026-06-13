@@ -50,6 +50,11 @@ class GazeboUGVConfig:
     max_yaw_rate: float = 1.2
     goal_x: float = 6.0
     goal_y: float = 0.0
+    randomize_goal: bool = False
+    goal_x_min: float = 6.0
+    goal_x_max: float = 6.0
+    goal_y_min: float = 0.0
+    goal_y_max: float = 0.0
     use_safety_shield: bool = True
     shield_warning_distance: float = 0.16
     shield_stop_distance: float = 0.08
@@ -91,6 +96,8 @@ class GazeboUGVEnv(gym.Env):
 
         self.latest_scan = None
         self.latest_odom = None
+        self._rng = np.random.default_rng()
+        self.goal = np.array([self.cfg.goal_x, self.cfg.goal_y], dtype=np.float32)
         self.steps = 0
         self.path_length = 0.0
         self.smoothness = 0.0
@@ -101,6 +108,9 @@ class GazeboUGVEnv(gym.Env):
         self._wait_for_first_messages()
 
     def reset(self, *, seed=None, options=None):
+        if seed is not None:
+            self._rng = np.random.default_rng(seed)
+        self._select_goal(options)
         self._publish_cmd(0.0, 0.0)
         try:
             self.rospy.wait_for_service(self.cfg.reset_world_service, timeout=3.0)
@@ -222,11 +232,28 @@ class GazeboUGVEnv(gym.Env):
         msg.angular.z = float(np.clip(angular, -self.cfg.max_yaw_rate, self.cfg.max_yaw_rate))
         self.cmd_pub.publish(msg)
 
+    def _select_goal(self, options=None):
+        options = options or {}
+        if "goal_x" in options and "goal_y" in options:
+            self.goal = np.array([float(options["goal_x"]), float(options["goal_y"])], dtype=np.float32)
+            return
+        if self.cfg.randomize_goal:
+            x_min, x_max = sorted((float(self.cfg.goal_x_min), float(self.cfg.goal_x_max)))
+            y_min, y_max = sorted((float(self.cfg.goal_y_min), float(self.cfg.goal_y_max)))
+            self.goal = np.array(
+                [
+                    float(self._rng.uniform(x_min, x_max)),
+                    float(self._rng.uniform(y_min, y_max)),
+                ],
+                dtype=np.float32,
+            )
+            return
+        self.goal = np.array([self.cfg.goal_x, self.cfg.goal_y], dtype=np.float32)
+
     def _build_observation(self):
         lidar = self._downsample_scan()
         xy, yaw = self._pose_xy_yaw()
-        goal = np.array([self.cfg.goal_x, self.cfg.goal_y], dtype=np.float32)
-        goal_vec = goal - xy
+        goal_vec = self.goal - xy
         goal_dist = float(np.linalg.norm(goal_vec))
         goal_angle = self._wrap_angle(math.atan2(goal_vec[1], goal_vec[0]) - yaw)
         linear_v, yaw_rate = self._twist()
@@ -285,8 +312,7 @@ class GazeboUGVEnv(gym.Env):
         return float(twist.linear.x), float(twist.angular.z)
 
     def _goal_distance(self, xy):
-        goal = np.array([self.cfg.goal_x, self.cfg.goal_y], dtype=np.float32)
-        return float(np.linalg.norm(goal - xy))
+        return float(np.linalg.norm(self.goal - xy))
 
     def _info(self, cost, event):
         return {
@@ -298,6 +324,8 @@ class GazeboUGVEnv(gym.Env):
             "path_length": float(self.path_length),
             "smoothness": float(self.smoothness),
             "goal_distance": float(self.last_goal_dist),
+            "goal_x": float(self.goal[0]),
+            "goal_y": float(self.goal[1]),
             "min_lidar": float(np.min(self.last_obs[: self.cfg.lidar_rays])),
             "steps": int(self.steps),
         }

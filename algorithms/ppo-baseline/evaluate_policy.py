@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("--episodes", type=int, default=50)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-steps", type=int, default=250)
-    parser.add_argument("--hidden-dim", type=int, default=128)
+    parser.add_argument("--hidden-dim", type=int, default=0, help="0 infers hidden size from checkpoint actor weights.")
     parser.add_argument("--random-policy", action="store_true", help="Evaluate random actions as a baseline.")
     parser.add_argument("--use-safety-shield", action="store_true", help="Filter actions before env.step for deployment-style evaluation.")
     parser.add_argument("--shield-warning-distance", type=float, default=0.08)
@@ -117,11 +117,20 @@ def matching_normalizer(model_path):
     return ""
 
 
+def infer_hidden_dim(checkpoint, fallback):
+    actor_state = checkpoint.get("actor", {})
+    fc1_weight = actor_state.get("fc1.weight")
+    if fc1_weight is not None and hasattr(fc1_weight, "shape") and len(fc1_weight.shape) == 2:
+        return int(fc1_weight.shape[0])
+    return int(fallback or 64)
+
+
 def load_actor(model_path, state_dim, action_dim, hidden_dim, device):
     try:
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     except TypeError:
         checkpoint = torch.load(model_path, map_location=device)
+    hidden_dim = infer_hidden_dim(checkpoint, hidden_dim)
     actor = Actor(state_dim, action_dim, hidden_dim=hidden_dim).to(device)
     actor.load_state_dict(checkpoint["actor"])
     actor.eval()
