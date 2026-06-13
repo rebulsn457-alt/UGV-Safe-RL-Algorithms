@@ -365,4 +365,4 @@ CMDP 建模当前已经可以作为中期材料的一部分。接下来建议按
 - Eitan Altman, *Constrained Markov Decision Processes*, 1999.
 - Joshua Achiam et al., "Constrained Policy Optimization", ICML 2017.
 - John Schulman et al., "Proximal Policy Optimization Algorithms", 2017.
-- 张津硕学长论文：参考其 CMDP 建模、30 维状态、`/scan` `/odom` `/cmd_vel` 数据流与 Gazebo 桥接思路；本仓库代码为本项目算法组独立整理、复现、调参和联调后的实现。
+- 参考 CMDP 建模、30 维状态、`/scan` `/odom` `/cmd_vel` 数据流与 Gazebo 桥接思路；本仓库代码为本项目算法组独立整理、复现、调参和联调后的实现。
