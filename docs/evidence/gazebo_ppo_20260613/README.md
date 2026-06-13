@@ -10,7 +10,7 @@ This folder records the PPO-Gazebo closed-loop evidence produced on the physical
 - `eval_logs/20260613094230/`: early deterministic probe on shifted goal `(1.5, 0.5)`.
 - `eval_logs/20260613094639/`: deterministic evaluation on local forward goal `(1.8, 0.0)`.
 - `eval_logs/20260613095113/`: deterministic evaluation on local forward goal `(2.2, 0.0)`.
-- `eval_logs/goal_grid_20260613153420/`: latest 9-goal grid evaluation summary, 45 Gazebo episodes total.
+- `eval_logs/goal_grid_20260613153420/`: latest 9-goal grid evaluation, including raw `episodes.csv`, 45 Gazebo episodes total.
 - `gazebo_ppo_eval_summary.csv`: compact table for reports.
 
 ## Run Summary
