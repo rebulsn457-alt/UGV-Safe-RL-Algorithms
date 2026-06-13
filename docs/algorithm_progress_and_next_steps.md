@@ -67,7 +67,7 @@
 
 该结果对应物理机目录 `eval_logs/goal_grid_20260613153420`，摘要已整理到 `docs/evidence/gazebo_ppo_20260613/eval_logs/goal_grid_20260613153420/`。当前可证明 PPO 已完成 Gazebo 闭环、topic 交互、模型保存加载、独立评估和小范围多目标泛化验证。下一阶段要提升到更接近毕设最终水准，需要继续做 Gazebo PPO-Lagrangian/CPO 对比，并扩大初始位姿、目标点和障碍布局随机化。
 
-## 3. 周五前建议目标
+## 3. 目标
 
 优先级从高到低：
 
@@ -86,7 +86,7 @@ cd algorithms/ppo-baseline
 python -c "import torch; print(torch.__version__)"
 ```
 
-今晚/明天基础实验：
+基础实验：
 
 ```bash
 python run_safe_ugv_experiments.py \
