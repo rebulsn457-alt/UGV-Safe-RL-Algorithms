@@ -70,7 +70,7 @@ def split_csv(value):
 def command_for(algo, config_name, env_kwargs, seed, args, run_name):
     common = [
         sys.executable,
-        "ppo._training.py" if algo == "ppo" else "ppo_lagrangian_training.py",
+        "ppo_training.py" if algo == "ppo" else "ppo_lagrangian_training.py",
         "--env-module",
         "safe_ugv_env",
         "--env-id",

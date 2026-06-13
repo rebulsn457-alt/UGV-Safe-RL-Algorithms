@@ -120,7 +120,7 @@ python evaluate_policy.py \
 - `algorithms/ppo-baseline/gazebo_ugv_env.py`：ROS1/Gazebo wrapper。
 - `algorithms/ppo-baseline/gazebo_ugv_env_template.py`：更轻量的接口模板。
 - `algorithms/ppo-baseline/safety_shield.py`：policy 到 `/cmd_vel` 之间的安全过滤。
-- `algorithms/ppo-baseline/ppo._training.py`：PPO baseline。
+- `algorithms/ppo-baseline/ppo_training.py`：PPO baseline。
 - `algorithms/ppo-baseline/ppo_lagrangian_training.py`：PPO-Lagrangian。
 - `algorithms/ppo-baseline/evaluate_policy.py`：自动成功率/碰撞率/cost 评估。
 

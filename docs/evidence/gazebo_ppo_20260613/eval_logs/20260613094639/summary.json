@@ -1,0 +1,30 @@
+{
+  "episodes": 5,
+  "success_rate": 1.0,
+  "collision_rate": 0.0,
+  "timeout_rate": 0.0,
+  "mean_reward": 127.81415619581938,
+  "mean_cost": 0.1396504010472975,
+  "mean_path_length": 1.3025427947752177,
+  "mean_smoothness": 1.3420828601421817,
+  "mean_steps": 70.0,
+  "env_id": "GazeboUGV-v0",
+  "env_kwargs": {
+    "scan_topic": "/scan",
+    "odom_topic": "/odom",
+    "cmd_vel_topic": "/cmd_vel",
+    "lidar_range": 6.0,
+    "max_speed": 0.25,
+    "max_yaw_rate": 0.6,
+    "goal_x": 1.8,
+    "goal_y": 0.0,
+    "robot_radius": 0.2,
+    "safety_margin": 0.35,
+    "shield_warning_distance": 0.1,
+    "shield_stop_distance": 0.04,
+    "use_safety_shield": true
+  },
+  "model_path": "models/best_ppo_actor_GazeboUGV-v0_20260613083156.pth",
+  "normalizer_path": "",
+  "use_safety_shield": false
+}

@@ -7,7 +7,7 @@
 主要代码：
 
 - `algorithms/ppo-baseline/ppo_agent.py`
-- `algorithms/ppo-baseline/ppo._training.py`
+- `algorithms/ppo-baseline/ppo_training.py`
 - `algorithms/ppo-baseline/safe_ugv_env.py`
 - `algorithms/ppo-baseline/safety_shield.py`
 - `algorithms/ppo-baseline/gazebo_ugv_env.py`
@@ -19,6 +19,7 @@
 - `docs/cmdp_modeling.md`
 - `docs/gazebo_interface_contract.md`
 - `docs/evidence/algorithm_completion_20260611/`
+- `docs/evidence/gazebo_ppo_20260613/`
 
 已完成的泛化优化：
 
@@ -48,7 +49,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cd algorithms/ppo-baseline
 python -c "import torch; print(torch.__version__)"
-python ppo._training.py --env-id Pendulum-v1 --episodes 400
+python ppo_training.py --env-id Pendulum-v1 --episodes 400
 ```
 
 本地验证结果：
@@ -71,7 +72,7 @@ python ppo._training.py --env-id Pendulum-v1 --episodes 400
 
 ```bash
 cd algorithms/ppo-baseline
-python ppo._training.py \
+python ppo_training.py \
   --env-module safe_ugv_env \
   --env-id SafeUGV-v0 \
   --episodes 80 \
@@ -86,7 +87,7 @@ python ppo._training.py \
 更长训练：
 
 ```bash
-python ppo._training.py \
+python ppo_training.py \
   --env-module safe_ugv_env \
   --env-id SafeUGV-v0 \
   --episodes 600 \
@@ -136,6 +137,21 @@ Codex 本地 CPU smoke/probe 验证结果：
 - 虚拟机 Ubuntu CPU，PPO-Lagrangian soft 约束，base 配置，seed 0/1/2，400 episodes：平均 `success_rate=0.6000`、`collision_rate=0.0000`、`eval_mean_reward≈96.46`。
 
 说明：200-300 episodes 只是代码链路和趋势验证。正式中期材料建议跑 600-1000 episodes，并至少用 3 个随机种子汇总平均值。
+
+## Gazebo 实机联调证据（2026-06-13）
+
+本仓库已加入 2026-06-13 在 Ubuntu 20.04 + ROS Noetic + Gazebo11 实机环境中的 PPO-Gazebo 闭环证据，路径为 `docs/evidence/gazebo_ppo_20260613/`。这组证据包含训练日志、独立评估 JSON/CSV、最佳 actor 权重和汇总表。
+
+训练设置：`GazeboUGV-v0`，观测 30 维，动作 `(v, w)`，ROS topic 为 `/scan`、`/odom`、`/cmd_vel`。PPO 训练 200 episodes 后生成模型 `best_ppo_actor_GazeboUGV-v0_20260613083156.pth`，训练中最佳评估约 `129.06`。
+
+| 评估目标 | episodes | success_rate | collision_rate | timeout_rate | mean_reward | mean_cost | 结论 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `(2.0, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 129.04 | 0.1166 | 原训练目标通过 |
+| `(1.8, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 127.81 | 0.1397 | 前向近邻泛化通过 |
+| `(2.2, 0.0)` | 5 | 1.00 | 0.00 | 0.00 | 130.39 | 0.1342 | 前向近邻泛化通过 |
+| `(1.5, 0.5)` | 5 | 0.00 | 0.00 | 1.00 | -38.52 | 0.1011 | 横向目标未通过，需要多目标随机化训练 |
+
+当前结论：PPO 已经完成 Gazebo 闭环、模型保存、模型加载、topic 交互和独立评估；在训练目标及同一直线前向近邻目标上达到 `success_rate=1.00`、`collision_rate=0.00`。下一步要达到更强泛化，需要把 `goal_x/goal_y`、初始位姿和障碍布局纳入训练随机化，再进行 PPO-Lagrangian/CPO 的 Gazebo 对比验证。
 
 ## 自动评估脚本
 
@@ -203,7 +219,7 @@ python run_safe_ugv_experiments.py \
 如果 UGV/Gazebo 环境 reward 已经在合理范围，例如单步大致 `[-5, 5]`，改成：
 
 ```bash
-python ppo._training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normalize-obs --normalize-reward
+python ppo_training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normalize-obs --normalize-reward
 ```
 
 ## 对接其他小车/Gazebo 的接口要求
@@ -230,7 +246,7 @@ python ppo._training.py --env-id YourGazeboUGVEnv-v0 --reward-scale 1.0 --normal
 不同小车建议优先配置这些项：
 
 ```bash
-python ppo._training.py \
+python ppo_training.py \
   --env-module your_gazebo_env_package \
   --env-id YourGazeboUGVEnv-v0 \
   --episodes 1000 \

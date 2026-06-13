@@ -18,7 +18,7 @@ VM Python runtime
 
 Syntax check
 Command run in /home/karwen/ppo_project/algorithms/ppo-baseline:
-/home/karwen/miniconda3/envs/ppo/bin/python -m py_compile ppo_agent.py ppo._training.py ppo_lagrangian_agent.py ppo_lagrangian_training.py safe_ugv_env.py safety_shield.py gazebo_ugv_env.py gazebo_ugv_env_template.py evaluate_policy.py run_safe_ugv_experiments.py
+/home/karwen/miniconda3/envs/ppo/bin/python -m py_compile ppo_agent.py ppo_training.py ppo_lagrangian_agent.py ppo_lagrangian_training.py safe_ugv_env.py safety_shield.py gazebo_ugv_env.py gazebo_ugv_env_template.py evaluate_policy.py run_safe_ugv_experiments.py
 
 Result: passed.
 
@@ -40,7 +40,7 @@ Training done. Last 20 reward: -112.3408 Last 20 cost: 4.8555784 lambda: 0.0
 
 Short PPO VM smoke test
 Command run in /home/karwen/ppo_project/algorithms/ppo-baseline:
-/home/karwen/miniconda3/envs/ppo/bin/python -u ppo._training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --episodes 5 --steps-per-update 128 --batch-size 32 --eval-interval 5 --eval-episodes 2 --run-name vm_latest_smoke_ppo
+/home/karwen/miniconda3/envs/ppo/bin/python -u ppo_training.py --env-module safe_ugv_env --env-id SafeUGV-v0 --episodes 5 --steps-per-update 128 --batch-size 32 --eval-interval 5 --eval-episodes 2 --run-name vm_latest_smoke_ppo
 
 Output:
 Ep 5/5 train_mean=-114.90 eval_mean=-115.01 success=0.00 collision=1.00 cost=3.87 steps=176
