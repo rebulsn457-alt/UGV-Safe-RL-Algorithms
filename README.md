@@ -1,6 +1,6 @@
 # UGV-Safe-RL-Algorithms
 
-无人车安全路径规划强化学习算法库。当前重点是把 PPO baseline 从单一 `Pendulum-v1` 实验改造成可迁移到不同小车与 Gazebo 环境的连续控制训练入口，并为后续 CPO/TRPO 等安全约束算法预留接口。
+无人车安全路径规划强化学习算法库。当前已将 PPO baseline 从单一 `Pendulum-v1` 实验改造成可迁移到不同小车与 Gazebo 环境的连续控制训练入口，并为后续 CPO/TRPO 等安全约束算法预留接口。
 
 ## 当前 PPO 泛化改造
 
